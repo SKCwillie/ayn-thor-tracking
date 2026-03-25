@@ -86,7 +86,7 @@ for ax, color in zip(axes, colors):
                 if not group.empty:
                     last_row = group.iloc[-1]
                     ax.annotate(
-                        f"{int(last_row['end'])}",
+                        f"Order #{int(last_row['end'])}",
                         xy=(last_row["date"], last_row["cumulative"]),
                         xytext=(10, 0),
                         textcoords='offset points',
