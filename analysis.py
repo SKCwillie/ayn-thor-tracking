@@ -1,7 +1,6 @@
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import matplotlib.dates as mdates
 
 DB_PATH = "shipping_info.db"
@@ -56,10 +55,10 @@ if num_colors == 1:
 
 MODEL_ORDER = ["Lite", "Base", "Pro", "Max"]
 MODEL_COLORS = {
-    "Lite": "#6A5ACD",    # Indigo/Purple (console)
-    "Base": "#3CB371",   # Green (A button)
-    "Pro": "#FFD700",    # Yellow (C-stick)
-    "Max": "#D32D2F"     # Red (B button)
+    "Lite": "#FFD700",
+    "Base": "#D32D2F",
+    "Pro": "#6A5ACD",
+    "Max": "#3CB371"
 }
 
 plt.style.use('default')
@@ -68,6 +67,8 @@ fig.patch.set_facecolor('#F0F0F0')  # GameCube silver background
 for ax, color in zip(axes, colors):
     color_df = df[df["color"] == color]
     plotted_labels = []
+    model_cum_y = []
+    model_end_labels = []
     for model in MODEL_ORDER:
         for (make, m), group in color_df.groupby(["make", "model"]):
             if m == model:
@@ -81,6 +82,45 @@ for ax, color in zip(axes, colors):
                     zorder=3
                 )
                 plotted_labels.append(label)
+                # Annotate the latest 'end' value at the rightmost point
+                if not group.empty:
+                    last_row = group.iloc[-1]
+                    ax.annotate(
+                        f"{int(last_row['end'])}",
+                        xy=(last_row["date"], last_row["cumulative"]),
+                        xytext=(10, 0),
+                        textcoords='offset points',
+                        va='center',
+                        ha='left',
+                        fontsize=12,
+                        fontweight='bold',
+                        color=MODEL_COLORS[model],
+                        fontname='Comic Sans MS',
+                        bbox=dict(boxstyle='round,pad=0.2', fc='#F0F0F0', ec=MODEL_COLORS[model], lw=1)
+                    )
+                # Collect y and label for right y-axis
+                model_cum_y.extend(list(group["cumulative"]))
+                model_end_labels.extend(list(group["end"]))
+    # Set up right y-axis with order numbers, but only show every 4th point to reduce clutter
+    if model_cum_y:
+        ax2 = ax.twinx()
+        # Remove duplicate y values and sort
+        y_pairs = sorted(set(zip(model_cum_y, model_end_labels)), key=lambda x: x[0])
+        # Show every 4th point (and always the last one)
+        if len(y_pairs) > 1:
+            y_pairs_to_show = y_pairs[::4]
+            if y_pairs[-1] not in y_pairs_to_show:
+                y_pairs_to_show.append(y_pairs[-1])
+        else:
+            y_pairs_to_show = y_pairs
+        y_ticks, y_labels = zip(*y_pairs_to_show)
+        ax2.set_yticks(y_ticks)
+        ax2.set_yticklabels([str(int(lbl)) for lbl in y_labels], fontsize=10, color="#222", fontname='Comic Sans MS')
+        ax2.set_ylabel("Order Number", fontsize=14, fontweight='bold', color='#222', fontname='Comic Sans MS')
+        ax2.tick_params(axis='y', colors='#222')
+        ax2.spines['right'].set_linewidth(2)
+        ax2.spines['right'].set_color('#222')
+        ax2.grid(False)
     ax.set_title(f"{color.title()}", fontsize=16, fontweight='bold', color='#222', fontname='Comic Sans MS')
     ax.grid(True, linestyle='-', linewidth=1.2, color='#888', alpha=0.5)
     ax.set_facecolor('#E0E0E0')  # Slightly darker gray for panel
@@ -101,5 +141,12 @@ for ax in axes:
 
 fig.suptitle("AYN Thor Shipping Progress", fontsize=22, fontweight='bold', color='#222', fontname='Comic Sans MS')
 fig.supylabel("Units Shipped", fontsize=16, fontweight='bold', color='#222', fontname='Comic Sans MS')
-plt.tight_layout(rect=[0, 0, 1, 0.96])
-plt.show()
+
+def plot_shipping_progress(output_path=None):
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if output_path:
+        plt.savefig(output_path)
+    #plt.show()
+
+if __name__ == "__main__":
+    plot_shipping_progress(output_path="shipping_progress.png")
