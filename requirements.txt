@@ -1,0 +1,5 @@
+requests~=2.32.5
+beautifulsoup4~=4.14.3
+pandas~=2.3.3
+matplotlib~=3.9.4
+joblib~=1.5.3

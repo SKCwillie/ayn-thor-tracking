@@ -127,4 +127,4 @@ def scrape_shipments(historical=False):
     print(f"Scraping complete. {total_rows} new rows added to shipping_info.db.")
 
 if __name__ == "__main__":
-    scrape_shipments(historical=True)
+    scrape_shipments(historical=False)
