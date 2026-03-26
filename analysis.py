@@ -187,6 +187,6 @@ def plot_color_models(output_path=None):
         plt.savefig(output_path)
 
 if __name__ == "__main__":
-    plot_shipping_progress(output_path="shipping_progress.png")
-    plot_black_models(output_path="black_models_orders.png")
-    plot_color_models(output_path="color_models_orders.png")
+    plot_shipping_progress(output_path="assets/shipping_progress.png")
+    plot_black_models(output_path="assets/black_models_orders.png")
+    plot_color_models(output_path="assets/color_models_orders.png")
