@@ -1,3 +1,4 @@
 .idea/
 fetched_dashboard.html
 assets/expanded_shipments.csv
+*.joblib
