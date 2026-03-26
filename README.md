@@ -1,3 +1,14 @@
+## Quick Start: Get a Shipping Prediction
+Copy and paste url to get predictions for your order
+
+https://ayn-thor-tracking.onrender.com/{{color}}/{{model}}/{{first4digits_of_order_number}}
+
+## Example:
+```
+https://ayn-thor-tracking.onrender.com/Rainbow/Max/1900
+```
+
+## Current Shipping Progress
 ![Shipping Progress Graph](assets/shipping_progress.png)
 ![Black Models Orders](assets/black_models_orders.png)
 ![Color Models Orders](assets/color_models_orders.png)
@@ -112,4 +123,3 @@ The following endpoints are available in the Shipping Prediction API:
   ```
 
 ---
-
