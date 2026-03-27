@@ -1,7 +1,7 @@
 ## Quick Start: Get a Shipping Prediction
 Copy and paste url to get predictions for your order
 
-https://ayn-thor-tracking.onrender.com/{{color}}/{{model}}/{{first4digits_of_order_number}}
+https://ayn-thor-tracker.com/{{color}}/{{model}}/{{first_four_digits_of_order_number}}
 
 ## Example:
 ```
