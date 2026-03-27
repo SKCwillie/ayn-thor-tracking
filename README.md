@@ -5,7 +5,7 @@ https://ayn-thor-tracking.onrender.com/{{color}}/{{model}}/{{first4digits_of_ord
 
 ## Example:
 ```
-https://ayn-thor-tracking.onrender.com/Rainbow/Max/1900
+http://ayn-thor-tracker.com/ClearPurple/Max/1910
 ```
 
 ## Current Shipping Progress
