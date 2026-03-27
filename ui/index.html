@@ -108,7 +108,7 @@ const color = colorSelect.value.replace(/\s/g,'')
 const model = modelSelect.value.replace(/\s/g,'')
 const shipment = document.getElementById("shipment").value
 
-const url = `/${model}/${color}/${shipment}`
+const url = `/${color}/${model}/${shipment}`
 
 const res = await fetch(url)
 const data = await res.json()
