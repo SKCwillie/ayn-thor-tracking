@@ -186,7 +186,11 @@ def plot_color_models(output_path=None):
     if output_path:
         plt.savefig(output_path)
 
-if __name__ == "__main__":
+def make_graphs():
     plot_shipping_progress(output_path="assets/shipping_progress.png")
     plot_black_models(output_path="assets/black_models_orders.png")
     plot_color_models(output_path="assets/color_models_orders.png")
+
+
+if __name__ == "__main__":
+    make_graphs()

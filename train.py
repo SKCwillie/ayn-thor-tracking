@@ -184,7 +184,7 @@ def print_summary(raw_df: pd.DataFrame, expanded_df: pd.DataFrame, artifact: dic
         )
 
 
-def main():
+def create_model():
     parser = argparse.ArgumentParser(description="Train shipping prediction models from SQLite")
     parser.add_argument("--db", default=DEFAULT_DB_PATH, help="Path to SQLite DB")
     parser.add_argument("--table", default=DEFAULT_TABLE_NAME, help="Table name")
@@ -235,4 +235,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    create_model()

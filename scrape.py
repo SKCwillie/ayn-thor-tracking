@@ -4,7 +4,7 @@ import re
 import sqlite3
 import time
 
-def scrape_shipments(historical=False):
+def scrape(historical=False):
     # List of URL_TIMESTAMPs to scrape
     URL_TIMESTAMPS = [
         20251103045827,
@@ -127,4 +127,4 @@ def scrape_shipments(historical=False):
     print(f"Scraping complete. {total_rows} new rows added to shipping_info.db.")
 
 if __name__ == "__main__":
-    scrape_shipments(historical=False)
+    scrape()
