@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: shipping-predictor-api
-    env: python
-    buildCommand: |
-      pip install -r requirements.txt
-      python train_model.py --db shipping_info.db --table shipments --output shipping_model.joblib
-    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
-    autoDeploy: true
