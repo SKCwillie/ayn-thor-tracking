@@ -98,7 +98,7 @@ def health():
 # Prediction Endpoint
 # Pattern: /ClearPurple/Max/1910
 # -------------------------
-@app.get("/{color}/{model}/{shipment_number}")
+@app.get("/api/{color}/{model}/{shipment_number}")
 def predict(color: str, model: str, shipment_number: int):
 
     normalized_color = normalize(color)

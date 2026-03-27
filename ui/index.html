@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AYN Thor Tracker</title>
+
+<style>
+body {
+font-family: system-ui;
+background: #f5f6f8;
+padding: 40px;
+}
+
+.container {
+max-width: 500px;
+margin: auto;
+background: white;
+padding: 30px;
+border-radius: 12px;
+box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+h1 {
+margin-bottom: 20px;
+}
+
+select, input, button {
+width: 100%;
+padding: 10px;
+margin-top: 10px;
+margin-bottom: 20px;
+font-size: 16px;
+}
+
+button {
+background: black;
+color: white;
+border: none;
+cursor: pointer;
+}
+
+.result {
+background: #f5f5f5;
+padding: 15px;
+border-radius: 8px;
+margin-top: 20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+<h1>AYN Thor Shipping Tracker</h1>
+
+<label>Color</label> <select id="color">
+
+<option>Black</option>
+<option>White</option>
+<option>Rainbow</option>
+<option>Clear Purple</option>
+</select>
+
+<label>Model</label> <select id="model"></select>
+
+<label>Shipment Number</label> <input id="shipment" placeholder="1910" />
+
+<button onclick="check()">Get Estimate</button>
+
+<div id="result" class="result" style="display:none"></div>
+
+</div>
+
+<script>
+
+const models = {
+"Black": ["Lite","Base","Pro","Max"],
+"White": ["Pro","Max"],
+"Rainbow": ["Pro","Max"],
+"Clear Purple": ["Pro","Max"]
+}
+
+const colorSelect = document.getElementById("color")
+const modelSelect = document.getElementById("model")
+
+function updateModels() {
+const color = colorSelect.value
+modelSelect.innerHTML = ""
+
+models[color].forEach(m => {
+const opt = document.createElement("option")
+opt.value = m
+opt.innerText = m
+modelSelect.appendChild(opt)
+})
+}
+
+colorSelect.addEventListener("change", updateModels)
+
+updateModels()
+
+async function check() {
+
+const color = colorSelect.value.replace(/\s/g,'')
+const model = modelSelect.value.replace(/\s/g,'')
+const shipment = document.getElementById("shipment").value
+
+const url = `/${model}/${color}/${shipment}`
+
+const res = await fetch(url)
+const data = await res.json()
+
+document.getElementById("result").style.display="block"
+document.getElementById("result").innerHTML =
+`Predicted Ship Date:<br><strong>${data.predicted_ship_date}</strong>`
+}
+
+</script>
+
+</body>
+</html>
