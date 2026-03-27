@@ -103,7 +103,7 @@ Estimate when your AYN Thor will ship
 
 <label>Order Number</label> <input
 id="shipment"
-placeholder="1910 or #OD1910418"
+placeholder="xxxx or #ODxxxxxxx"
 />
 
 <button onclick="check()">Get Estimate</button>
@@ -129,6 +129,14 @@ target="_blank"
 >
 
 View Source Code </a>
+    <div class="progress-chart">
+<h3>Shipping Progress</h3>
+<img
+src="/shipping_progress.png"
+alt="Shipping Progress Chart"
+class="progress-image"
+/>
+</div>
 
 <div style="margin-top:8px;font-size:12px;color:#777;">
 Model updates nightly • Open Source
@@ -209,7 +217,6 @@ return
 
 resultEl.innerHTML =
 `
-Parsed Order: <strong>${shipment}</strong><br><br>
 Predicted Ship Date:<br>
 <strong>${data.predicted_ship_date}</strong>
 `
