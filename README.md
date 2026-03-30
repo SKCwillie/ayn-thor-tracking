@@ -1,12 +1,6 @@
-## Quick Start: Get a Shipping Prediction
-Copy and paste url to get predictions for your order
+## Get a Shipping Prediction
+http://ayn-thor-tracker.com/
 
-https://ayn-thor-tracker.com/{{color}}/{{model}}/{{first_four_digits_of_order_number}}
-
-## Example:
-```
-http://ayn-thor-tracker.com/ClearPurple/Max/1910
-```
 
 ## Current Shipping Progress
 ![Shipping Progress Graph](assets/shipping_progress.png)
