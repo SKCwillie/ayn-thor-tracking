@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AYN Thor Tracker</title>
+<title>AYN Thor Shipping Tracker</title>
 
 <style>
 body {
@@ -14,7 +14,7 @@ padding: 40px;
 }
 
 .container {
-max-width: 500px;
+max-width: 520px;
 margin: auto;
 background: white;
 padding: 30px;
@@ -23,6 +23,11 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
 h1 {
+margin-bottom: 10px;
+}
+
+.subtitle {
+color: #666;
 margin-bottom: 20px;
 }
 
@@ -39,6 +44,7 @@ background: black;
 color: white;
 border: none;
 cursor: pointer;
+border-radius: 6px;
 }
 
 .result {
@@ -47,6 +53,40 @@ padding: 15px;
 border-radius: 8px;
 margin-top: 20px;
 }
+
+.github-links {
+margin-top: 30px;
+text-align: center;
+}
+
+.github-button {
+display:inline-block;
+padding:10px 16px;
+border-radius:8px;
+background:#24292e;
+color:white;
+text-decoration:none;
+font-size:14px;
+margin-top:10px;
+}
+
+.github-link {
+display:block;
+margin-top:15px;
+font-size:13px;
+color:#555;
+text-decoration:none;
+}
+
+.progress-image {
+width: 100%;
+height: auto;
+max-width: 100%;
+border-radius: 8px;
+box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+margin-top: 10px;
+}
+
 </style>
 
 </head>
@@ -54,7 +94,11 @@ margin-top: 20px;
 <body>
 
 <div class="container">
+
 <h1>AYN Thor Shipping Tracker</h1>
+<div class="subtitle">
+Estimate when your AYN Thor will ship
+</div>
 
 <label>Color</label> <select id="color">
 
@@ -66,49 +110,46 @@ margin-top: 20px;
 
 <label>Model</label> <select id="model"></select>
 
-<label>Shipment Number</label> <input id="shipment" placeholder="1910" />
+<label>Order Number</label> <input
+id="shipment"
+placeholder="xxxx or #ODxxxxxxx"
+/>
 
 <button onclick="check()">Get Estimate</button>
 
 <div id="result" class="result" style="display:none"></div>
-<div style="margin-top:30px;text-align:center;">
-<a
-href="https://github.com/SKCwillie/ayn-thor-tracking"
-target="_blank"
-style="
-display:inline-block;
-padding:8px 14px;
-border-radius:8px;
-background:#f5f5f5;
-color:#333;
-text-decoration:none;
-font-size:14px;
-"
->
-View Project on GitHub
-</a>
-</div>
-</div>
-<div style="margin-top:30px;text-align:center;">
-<a
-href="https://github.com/SKCwillie/ayn-thor-tracking"
-target="_blank"
-style="
-display:inline-block;
-padding:10px 16px;
-border-radius:8px;
-background:#24292e;
-color:white;
-text-decoration:none;
-font-size:14px;
-font-weight:500;
-"
->
-⭐ Star this project on GitHub
-</a>
 
-<div style="margin-top:8px;font-size:12px;color:#666;">
-Helps others discover the tracker
+<div class="github-links">
+
+<a
+class="github-button"
+href="https://github.com/SKCwillie/ayn-thor-tracking"
+target="_blank"
+
+>
+
+⭐ Star this project on GitHub </a>
+
+<a
+class="github-link"
+href="https://github.com/SKCwillie/ayn-thor-tracking"
+target="_blank"
+
+>
+
+View Source Code </a>
+    <div class="progress-chart">
+<img
+src="/shipping_progress.png"
+alt="Shipping Progress Chart"
+class="progress-image"
+/>
+</div>
+
+<div style="margin-top:8px;font-size:12px;color:#777;">
+Model updates nightly • Open Source
+</div>
+
 </div>
 
 </div>
@@ -141,20 +182,59 @@ colorSelect.addEventListener("change", updateModels)
 
 updateModels()
 
+function extractShipmentNumber(rawValue) {
+
+const digitsOnly = rawValue.replace(/\D/g, "")
+
+if (digitsOnly.length < 4) {
+return null
+}
+
+return digitsOnly.slice(0,4)
+}
+
 async function check() {
 
 const color = colorSelect.value.replace(/\s/g,'')
 const model = modelSelect.value.replace(/\s/g,'')
-const shipment = document.getElementById("shipment").value
+const rawShipment = document.getElementById("shipment").value.trim()
+
+const resultEl = document.getElementById("result")
+
+const shipment = extractShipmentNumber(rawShipment)
+
+resultEl.style.display="block"
+
+if (!shipment) {
+resultEl.innerHTML =
+"Enter a 4 digit order number or full order like #OD1910418"
+return
+}
 
 const url = `/${color}/${model}/${shipment}`
+
+try {
 
 const res = await fetch(url)
 const data = await res.json()
 
-document.getElementById("result").style.display="block"
-document.getElementById("result").innerHTML =
-`Predicted Ship Date:<br><strong>${data.predicted_ship_date}</strong>`
+if (!res.ok) {
+resultEl.innerHTML = `Error: ${JSON.stringify(data)}`
+return
+}
+
+resultEl.innerHTML =
+`
+Predicted Ship Date:<br>
+<strong>${data.predicted_ship_date}</strong>
+`
+
+} catch(err) {
+
+resultEl.innerHTML = `Request failed: ${err.message}`
+
+}
+
 }
 
 </script>
