@@ -139,6 +139,26 @@ margin-top: 10px;
   border: 1px solid #e3e5ea;
   font-weight: 500;
 }
+.latest-shipment-pill.lite {
+  background: #fffbe6;
+  color: #ad8b00;
+  border-color: #ffe58f;
+}
+.latest-shipment-pill.base {
+  background: #fff1f0;
+  color: #cf1322;
+  border-color: #ffa39e;
+}
+.latest-shipment-pill.pro {
+  background: #f9f0ff;
+  color: #722ed1;
+  border-color: #d3adf7;
+}
+.latest-shipment-pill.max {
+  background: #f6ffed;
+  color: #389e0d;
+  border-color: #b7eb8f;
+}
 .latest-shipment-order {
   font-family: monospace;
   font-size: 0.97em;
@@ -332,7 +352,8 @@ async function loadLatestShipments() {
             html += `<span class=\"latest-shipment-icon\">🚚</span> ${colorGroup.color}</div>`;
             html += `<div class=\"latest-shipment-models\">`;
             colorGroup.models.forEach(model => {
-                html += `<span class=\"latest-shipment-pill\"><b>${model.model}</b> <span class=\"latest-shipment-order\">${model.latest_order}</span></span>`;
+                const pillClass = model.model.toLowerCase();
+                html += `<span class=\"latest-shipment-pill ${pillClass}\"><b>${model.model}</b> <span class=\"latest-shipment-order\">${model.latest_order}</span></span>`;
             });
             html += `</div></div>`;
         });
