@@ -95,6 +95,65 @@ box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 margin-top: 10px;
 }
 
+.latest-shipments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 12px;
+  padding: 0 18px 0 18px;
+}
+.latest-shipment-color {
+  background: linear-gradient(90deg, #f5f6fa 60%, #f0f1f7 100%);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  padding: 14px 16px 10px 16px;
+  min-width: 180px;
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.latest-shipment-color-title {
+  font-weight: 600;
+  font-size: 1em;
+  margin-bottom: 7px;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.latest-shipment-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 8px;
+}
+.latest-shipment-pill {
+  background: #fff;
+  border-radius: 16px;
+  padding: 4px 12px 4px 10px;
+  font-size: 0.97em;
+  color: #222;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e3e5ea;
+  font-weight: 500;
+}
+.latest-shipment-order {
+  font-family: monospace;
+  font-size: 0.97em;
+  color: #4a6;
+  background: #eafbe7;
+  border-radius: 10px;
+  padding: 2px 7px;
+  margin-left: 2px;
+  font-weight: 600;
+}
+.latest-shipment-icon {
+  font-size: 1.1em;
+  color: #4a6;
+  margin-right: 2px;
+}
 </style>
 
 </head>
@@ -133,9 +192,12 @@ Estimate when your AYN Thor will ship
 </div>
 
 <!-- Latest Shipments Card -->
-<div class="card" id="latest-shipments-section" style="margin-top:0;">
-    <h1 style="font-size:1.1em;margin-bottom:10px;">Latest Shipments</h1>
-    <div id="latest-shipments-list" style="font-size:15px;color:#222;"></div>
+<div class="card" id="latest-shipments-section" style="margin-top:0; padding: 0 0 18px 0;">
+    <div style="padding: 18px 18px 0 18px;">
+        <h1 style="font-size:1.1em;margin-bottom:2px;letter-spacing:0.01em;">Latest Shipments</h1>
+        <div style="font-size:13px;color:#888;margin-bottom:10px;">Most recent fulfilled orders by color & model</div>
+    </div>
+    <div id="latest-shipments-list" class="latest-shipments-list"></div>
 </div>
 
 <!-- Charts and GitHub Card -->
@@ -255,34 +317,35 @@ resultEl.innerHTML = `Request failed: ${err.message}`
 
 }
 
-}
-
 // --- New: Populate Latest Shipments Section ---
 async function loadLatestShipments() {
     const section = document.getElementById("latest-shipments-list");
-    section.innerHTML = "Loading latest shipments...";
+    section.innerHTML = "<div style='padding:18px 0;color:#888;'>Loading latest shipments...</div>";
     try {
         const res = await fetch("/latest");
         if (!res.ok) {
-            section.innerHTML = "Failed to load latest shipments.";
+            section.innerHTML = "<div style='padding:18px 0;color:#c44;'>Failed to load latest shipments.</div>";
             return;
         }
         const data = await res.json();
         if (!data.latest_shipments || !Array.isArray(data.latest_shipments)) {
-            section.innerHTML = "No latest shipment data available.";
+            section.innerHTML = "<div style='padding:18px 0;color:#888;'>No latest shipment data available.</div>";
             return;
         }
         let html = "";
         data.latest_shipments.forEach(colorGroup => {
-            html += `<div style="margin-top:12px;"><strong>${colorGroup.color}</strong><ul style="margin:4px 0 8px 18px;padding:0;">`;
+            html += `<div class=\"latest-shipment-color\">`;
+            html += `<div class=\"latest-shipment-color-title\">`;
+            html += `<span class=\"latest-shipment-icon\">🚚</span> ${colorGroup.color}</div>`;
+            html += `<div class=\"latest-shipment-models\">`;
             colorGroup.models.forEach(model => {
-                html += `<li><b>${model.model}</b>: ${model.latest_order}</li>`;
+                html += `<span class=\"latest-shipment-pill\"><b>${model.model}</b> <span class=\"latest-shipment-order\">${model.latest_order}</span></span>`;
             });
-            html += "</ul></div>";
+            html += `</div></div>`;
         });
         section.innerHTML = html;
     } catch (e) {
-        section.innerHTML = "Error loading latest shipments.";
+        section.innerHTML = "<div style='padding:18px 0;color:#c44;'>Error loading latest shipments.</div>";
     }
 }
 window.addEventListener("DOMContentLoaded", loadLatestShipments);
