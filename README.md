@@ -179,7 +179,7 @@ The following endpoints are available in the Shipping Prediction API:
 
 ## Disclaimer
 
-This tracker is a best-effort estimate based on shipping data reported by AYN and observed trends. It's meant to give a general idea of progress — not an exact prediction.
+This tracker is a best-effort estimate based on shipping data reported by AYN and observed trends. It's meant to give a general idea of progress — not a static prediction.
 
 Shipping timelines can change for many reasons outside of this tracker’s control, such as production delays, RAM or component shortages, shipping/logistics issues, or changes in AYN’s fulfillment priorities.
 
