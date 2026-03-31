@@ -265,95 +265,47 @@ colorSelect.addEventListener("change", updateModels)
 updateModels()
 
 function extractShipmentNumber(rawValue) {
-
 const digitsOnly = rawValue.replace(/\D/g, "")
-
 if (digitsOnly.length < 4) {
 return null
 }
-
 return digitsOnly.slice(0,4)
 }
 
 async function check() {
-
 const color = colorSelect.value.replace(/\s/g,'')
 const model = modelSelect.value.replace(/\s/g,'')
 const rawShipment = document.getElementById("shipment").value.trim()
-
 const resultEl = document.getElementById("result")
-
 const shipment = extractShipmentNumber(rawShipment)
-
 resultEl.style.display="block"
-
 if (!shipment) {
 resultEl.innerHTML =
 "Enter a 4 digit order number or full order like #OD1910418"
 return
 }
-
 const url = `/${color}/${model}/${shipment}`
-
 try {
-
 const res = await fetch(url)
 const data = await res.json()
-
 if (!res.ok) {
 resultEl.innerHTML = `Error: ${JSON.stringify(data)}`
 return
 }
-
 resultEl.innerHTML =
 `
 Predicted Ship Date:<br>
 <strong>${data.predicted_ship_date}</strong>
 `
-
 } catch(err) {
-
 resultEl.innerHTML = `Request failed: ${err.message}`
-
+}
 }
 
-// --- New: Populate Latest Shipments Section ---
+// --- Load Latest Shipments from API ---
 async function loadLatestShipments() {
     const section = document.getElementById("latest-shipments-list");
     section.innerHTML = "<div style='padding:18px 0;color:#888;'>Loading latest shipments...</div>";
-    // Demo fallback data
-    const demoData = [
-        {
-            color: "Black",
-            models: [
-                { model: "Lite", latest_order: "xxxx" },
-                { model: "Base", latest_order: "xxxx" },
-                { model: "Pro", latest_order: "xxxx" },
-                { model: "Max", latest_order: "xxxx" }
-            ]
-        },
-        {
-            color: "White",
-            models: [
-                { model: "Pro", latest_order: "xxxx" },
-                { model: "Max", latest_order: "xxxx" }
-            ]
-        },
-        {
-            color: "Rainbow",
-            models: [
-                { model: "Pro", latest_order: "xxxx" },
-                { model: "Max", latest_order: "xxxx" }
-            ]
-        },
-        {
-            color: "Clear Purple",
-            models: [
-                { model: "Pro", latest_order: "xxxx" },
-                { model: "Max", latest_order: "xxxx" }
-            ]
-        }
-    ];
     function renderShipments(data) {
         let html = "";
         data.forEach(colorGroup => {
@@ -373,12 +325,12 @@ async function loadLatestShipments() {
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         if (!data.latest_shipments || !Array.isArray(data.latest_shipments) || data.latest_shipments.length === 0) {
-            renderShipments(demoData);
+            section.innerHTML = '<div style="padding:18px 0;color:#888;">No latest shipment data available.</div>';
         } else {
             renderShipments(data.latest_shipments);
         }
     } catch (e) {
-        renderShipments(demoData);
+        section.innerHTML = '<div style="padding:18px 0;color:#888;">Failed to load latest shipments.</div>';
     }
 }
 window.addEventListener("DOMContentLoaded", loadLatestShipments);
