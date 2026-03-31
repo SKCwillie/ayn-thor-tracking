@@ -95,6 +95,81 @@ box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 margin-top: 10px;
 }
 
+.latest-shipments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 12px;
+  padding: 0 18px 0 18px;
+}
+.latest-shipment-color {
+  background: linear-gradient(90deg, #f5f6fa 60%, #f0f1f7 100%);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  padding: 14px 16px 10px 16px;
+  min-width: 180px;
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.latest-shipment-color-title {
+  font-weight: 600;
+  font-size: 1em;
+  margin-bottom: 7px;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.latest-shipment-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 8px;
+}
+.latest-shipment-pill {
+  background: #fff;
+  border-radius: 16px;
+  padding: 4px 12px 4px 10px;
+  font-size: 0.97em;
+  color: #222;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e3e5ea;
+  font-weight: 500;
+}
+.latest-shipment-order {
+  font-family: monospace;
+  font-size: 0.97em;
+  color: #4a6;
+  background: #eafbe7;
+  border-radius: 10px;
+  padding: 2px 7px;
+  margin-left: 2px;
+  font-weight: 600;
+}
+.latest-shipment-icon {
+  font-size: 1.1em;
+  color: #4a6;
+  margin-right: 2px;
+}
+
+/* Disclaimer Styles */
+.disclaimer {
+  margin-top: 24px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  padding: 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #7c6f3c;
+}
+.disclaimer h2 {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  color: #ad8b00;
+}
 </style>
 
 </head>
@@ -133,9 +208,12 @@ Estimate when your AYN Thor will ship
 </div>
 
 <!-- Latest Shipments Card -->
-<div class="card" id="latest-shipments-section" style="margin-top:0;">
-    <h1 style="font-size:1.1em;margin-bottom:10px;">Latest Shipments</h1>
-    <div id="latest-shipments-list" style="font-size:15px;color:#222;"></div>
+<div class="card" id="latest-shipments-section" style="margin-top:0; padding: 0 0 18px 0;">
+    <div style="padding: 18px 18px 0 18px;">
+        <h1 style="font-size:1.1em;margin-bottom:2px;letter-spacing:0.01em;">Latest Shipments</h1>
+        <div style="font-size:13px;color:#888;margin-bottom:10px;">Most recent fulfilled orders by color & model</div>
+    </div>
+    <div id="latest-shipments-list" class="latest-shipments-list"></div>
 </div>
 
 <!-- Charts and GitHub Card -->
@@ -155,15 +233,6 @@ Estimate when your AYN Thor will ship
         </div>
 
         <a
-        class="github-button"
-        href="https://github.com/SKCwillie/ayn-thor-tracking"
-        target="_blank"
-        style="margin-top:20px;"
-        >
-        ⭐ Star this project on GitHub
-        </a>
-
-        <a
         class="github-link"
         href="https://github.com/SKCwillie/ayn-thor-tracking"
         target="_blank"
@@ -171,6 +240,17 @@ Estimate when your AYN Thor will ship
         View Source Code
         </a>
     </div>
+</div>
+
+<!-- Disclaimer Section -->
+<div class="card disclaimer">
+  <h2>Disclaimer</h2>
+  <div>
+    This tracker is a best-effort estimate based on shipping data reported by AYN and observed trends. It's meant to give a general idea of progress — not an exact prediction.<br><br>
+    Shipping timelines can change for many reasons outside of this tracker’s control, such as production delays, RAM or component shortages, shipping/logistics issues, or changes in AYN’s fulfillment priorities.<br><br>
+    Because of this, actual shipping may move faster or slower than shown here. While the data comes from AYN, future shipping progress is still an estimate and things can shift quickly.<br><br>
+    <b>This project is not affiliated with AYN</b> — just a community tool built to help everyone get a rough sense of where things stand.
+  </div>
 </div>
 
 </div>
@@ -203,86 +283,72 @@ colorSelect.addEventListener("change", updateModels)
 updateModels()
 
 function extractShipmentNumber(rawValue) {
-
 const digitsOnly = rawValue.replace(/\D/g, "")
-
 if (digitsOnly.length < 4) {
 return null
 }
-
 return digitsOnly.slice(0,4)
 }
 
 async function check() {
-
 const color = colorSelect.value.replace(/\s/g,'')
 const model = modelSelect.value.replace(/\s/g,'')
 const rawShipment = document.getElementById("shipment").value.trim()
-
 const resultEl = document.getElementById("result")
-
 const shipment = extractShipmentNumber(rawShipment)
-
 resultEl.style.display="block"
-
 if (!shipment) {
 resultEl.innerHTML =
 "Enter a 4 digit order number or full order like #OD1910418"
 return
 }
-
 const url = `/${color}/${model}/${shipment}`
-
 try {
-
 const res = await fetch(url)
 const data = await res.json()
-
 if (!res.ok) {
 resultEl.innerHTML = `Error: ${JSON.stringify(data)}`
 return
 }
-
 resultEl.innerHTML =
 `
 Predicted Ship Date:<br>
 <strong>${data.predicted_ship_date}</strong>
 `
-
 } catch(err) {
-
 resultEl.innerHTML = `Request failed: ${err.message}`
-
+}
 }
 
-}
-
-// --- New: Populate Latest Shipments Section ---
+// --- Load Latest Shipments from API ---
 async function loadLatestShipments() {
     const section = document.getElementById("latest-shipments-list");
-    section.innerHTML = "Loading latest shipments...";
-    try {
-        const res = await fetch("/latest");
-        if (!res.ok) {
-            section.innerHTML = "Failed to load latest shipments.";
-            return;
-        }
-        const data = await res.json();
-        if (!data.latest_shipments || !Array.isArray(data.latest_shipments)) {
-            section.innerHTML = "No latest shipment data available.";
-            return;
-        }
+    section.innerHTML = "<div style='padding:18px 0;color:#888;'>Loading latest shipments...</div>";
+    function renderShipments(data) {
         let html = "";
-        data.latest_shipments.forEach(colorGroup => {
-            html += `<div style="margin-top:12px;"><strong>${colorGroup.color}</strong><ul style="margin:4px 0 8px 18px;padding:0;">`;
+        data.forEach(colorGroup => {
+            html += `<div class=\"latest-shipment-color\">`;
+            html += `<div class=\"latest-shipment-color-title\">`;
+            html += `<span class=\"latest-shipment-icon\">🚚</span> ${colorGroup.color}</div>`;
+            html += `<div class=\"latest-shipment-models\">`;
             colorGroup.models.forEach(model => {
-                html += `<li><b>${model.model}</b>: ${model.latest_order}</li>`;
+                html += `<span class=\"latest-shipment-pill\"><b>${model.model}</b> <span class=\"latest-shipment-order\">${model.latest_order}</span></span>`;
             });
-            html += "</ul></div>";
+            html += `</div></div>`;
         });
         section.innerHTML = html;
+    }
+    try {
+        const res = await fetch("/latest");
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        if (!data.latest_shipments || !Array.isArray(data.latest_shipments) || data.latest_shipments.length === 0) {
+            section.innerHTML = '<div style="padding:18px 0;color:#888;">No latest shipment data available.</div>';
+        } else {
+            renderShipments(data.latest_shipments);
+        }
     } catch (e) {
-        section.innerHTML = "Error loading latest shipments.";
+        section.innerHTML = '<div style="padding:18px 0;color:#888;">Failed to load latest shipments.</div>';
     }
 }
 window.addEventListener("DOMContentLoaded", loadLatestShipments);
