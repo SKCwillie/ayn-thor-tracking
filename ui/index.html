@@ -9,8 +9,26 @@
 <style>
 body {
 font-family: system-ui;
-background: #f5f6f8;
+background: linear-gradient(180deg, #f6f7fa 0%, #e9ebf1 100%);
 padding: 32px;
+position: relative;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* Nintendo DS dual-screen inspired background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Two soft rectangles with a faint line between */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(240,242,247,0.8) 48%, rgba(240,242,247,0.8) 52%, rgba(255,255,255,0.7) 100%),
+    linear-gradient(180deg, transparent 49.5%, #d1d5db 50%, transparent 50.5%);
+  /* The first gradient is the dual screens, the second is the faint line */
+  opacity: 0.8;
 }
 
 .container {
@@ -20,6 +38,8 @@ background: white;
 padding: 18px;
 border-radius: 12px;
 box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+position: relative;
+z-index: 1;
 }
 
 .card {
