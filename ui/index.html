@@ -276,7 +276,7 @@ async function loadLatestShipments() {
         data.latest_shipments.forEach(colorGroup => {
             html += `<div style="margin-top:12px;"><strong>${colorGroup.color}</strong><ul style="margin:4px 0 8px 18px;padding:0;">`;
             colorGroup.models.forEach(model => {
-                html += `<li><b>${model.model}</b>: #${model.latest_order} &mdash; <span style="color:#555;">${model.latest_ship_date}</span></li>`;
+                html += `<li><b>${model.model}</b>: ${model.latest_order} &mdash;</li>`;
             });
             html += "</ul></div>";
         });
