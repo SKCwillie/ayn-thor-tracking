@@ -185,3 +185,55 @@ def list_models():
         "count": len(results),
         "models": results
     }
+
+
+# -------------------------
+# Latest Shipments
+# -------------------------
+@app.get("/latest")
+def latest_shipments():
+    """
+    Return the latest shipping info grouped by color, with models ordered as Lite, Base, Pro, Max.
+    """
+    # Define desired model order (case-insensitive)
+    model_order = ["lite", "base", "pro", "max"]
+
+    # Group by color
+    color_dict = {}
+    for key in models.keys():
+        canonical = canonical_names[key]
+        meta = training_meta[key]
+        color = canonical[2]
+        model = canonical[1]
+        make = canonical[0]
+        entry = {
+            "make": make,
+            "model": model,
+            "latest_order": meta["max_order"],
+            "latest_ship_date": meta["max_date"],
+            "rows": meta["row_count"]
+        }
+        if color not in color_dict:
+            color_dict[color] = []
+        color_dict[color].append(entry)
+
+    # Sort models for each color by the specified order
+    def model_sort_key(entry):
+        model_name = entry["model"].lower()
+        try:
+            return model_order.index(model_name)
+        except ValueError:
+            return len(model_order)  # unknown models go last
+
+    latest_payload = []
+    for color, models_list in color_dict.items():
+        sorted_models = sorted(models_list, key=model_sort_key)
+        latest_payload.append({
+            "color": color,
+            "models": sorted_models
+        })
+
+    return {
+        "count": len(latest_payload),
+        "latest_shipments": latest_payload
+    }

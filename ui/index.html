@@ -22,6 +22,14 @@ border-radius: 12px;
 box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
 
+.card {
+background: #f8f9fb;
+border-radius: 10px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+padding: 22px 18px 18px 18px;
+margin-bottom: 24px;
+}
+
 h1 {
 margin-bottom: 10px;
 }
@@ -55,7 +63,7 @@ margin-top: 20px;
 }
 
 .github-links {
-margin-top: 30px;
+margin-top: 0px;
 text-align: center;
 }
 
@@ -100,62 +108,74 @@ margin-top: 10px;
 Estimate when your AYN Thor will ship
 </div>
 
-<label>Color</label> <select id="color">
+<!-- Input Card -->
+<div class="card">
+    <label>Color</label>
+    <select id="color">
+        <option>Black</option>
+        <option>White</option>
+        <option>Rainbow</option>
+        <option>Clear Purple</option>
+    </select>
 
-<option>Black</option>
-<option>White</option>
-<option>Rainbow</option>
-<option>Clear Purple</option>
-</select>
+    <label>Model</label>
+    <select id="model"></select>
 
-<label>Model</label> <select id="model"></select>
+    <label>Order Number</label>
+    <input
+        id="shipment"
+        placeholder="xxxx or #ODxxxxxxx"
+    />
 
-<label>Order Number</label> <input
-id="shipment"
-placeholder="xxxx or #ODxxxxxxx"
-/>
+    <button onclick="check()">Get Estimate</button>
 
-<button onclick="check()">Get Estimate</button>
-
-<div id="result" class="result" style="display:none"></div>
-
-<div class="github-links">
-
-<a
-class="github-button"
-href="https://github.com/SKCwillie/ayn-thor-tracking"
-target="_blank"
-
->
-
-⭐ Star this project on GitHub </a>
-
-<a
-class="github-link"
-href="https://github.com/SKCwillie/ayn-thor-tracking"
-target="_blank"
-
->
-
-View Source Code </a>
-    <div class="progress-chart">
-<img
-src="/shipping_progress.png"
-alt="Shipping Progress Chart"
-class="progress-image"
-/>
+    <div id="result" class="result" style="display:none"></div>
 </div>
 
-<div style="margin-top:8px;font-size:12px;color:#777;">
-Model updates nightly • Open Source
+<!-- Latest Shipments Card -->
+<div class="card" id="latest-shipments-section" style="margin-top:0;">
+    <h2 style="font-size:1.1em;margin-bottom:10px;">Latest Shipments</h2>
+    <div id="latest-shipments-list" style="font-size:15px;color:#222;"></div>
 </div>
 
+<!-- Charts and GitHub Card -->
+<div class="card">
+    <div class="github-links">
+
+        <div class="progress-chart">
+        <img
+        src="/shipping_progress.png"
+        alt="Shipping Progress Chart"
+        class="progress-image"
+        />
+        </div>
+
+        <div style="margin-top:8px;font-size:12px;color:#777;">
+        Model updates nightly • Open Source
+        </div>
+
+        <a
+        class="github-button"
+        href="https://github.com/SKCwillie/ayn-thor-tracking"
+        target="_blank"
+        style="margin-top:20px;"
+        >
+        ⭐ Star this project on GitHub
+        </a>
+
+        <a
+        class="github-link"
+        href="https://github.com/SKCwillie/ayn-thor-tracking"
+        target="_blank"
+        >
+        View Source Code
+        </a>
+    </div>
 </div>
 
 </div>
 
 <script>
-
 const models = {
 "Black": ["Lite","Base","Pro","Max"],
 "White": ["Pro","Max"],
@@ -237,6 +257,35 @@ resultEl.innerHTML = `Request failed: ${err.message}`
 
 }
 
+// --- New: Populate Latest Shipments Section ---
+async function loadLatestShipments() {
+    const section = document.getElementById("latest-shipments-list");
+    section.innerHTML = "Loading latest shipments...";
+    try {
+        const res = await fetch("/latest");
+        if (!res.ok) {
+            section.innerHTML = "Failed to load latest shipments.";
+            return;
+        }
+        const data = await res.json();
+        if (!data.latest_shipments || !Array.isArray(data.latest_shipments)) {
+            section.innerHTML = "No latest shipment data available.";
+            return;
+        }
+        let html = "";
+        data.latest_shipments.forEach(colorGroup => {
+            html += `<div style="margin-top:12px;"><strong>${colorGroup.color}</strong><ul style="margin:4px 0 8px 18px;padding:0;">`;
+            colorGroup.models.forEach(model => {
+                html += `<li><b>${model.model}</b>: #${model.latest_order} &mdash; <span style="color:#555;">${model.latest_ship_date}</span></li>`;
+            });
+            html += "</ul></div>";
+        });
+        section.innerHTML = html;
+    } catch (e) {
+        section.innerHTML = "Error loading latest shipments.";
+    }
+}
+window.addEventListener("DOMContentLoaded", loadLatestShipments);
 </script>
 
 </body>
