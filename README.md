@@ -117,3 +117,62 @@ The following endpoints are available in the Shipping Prediction API:
   ```
 
 ---
+
+### List Latest Shipments
+
+- **GET /latest**  
+  Returns the latest shipping info for each color, with models listed in the order: Lite, Base, Pro, Max.
+
+  **Example:**
+  ```
+  GET /latest
+  ```
+
+  **Response:**
+  ```json
+  {
+    "count": 4,
+    "latest_shipments": [
+      {
+        "color": "ClearPurple",
+        "models": [
+          {
+            "make": "Thor",
+            "model": "Lite",
+            "latest_order": 1200,
+            "latest_ship_date": "2026-04-10",
+            "rows": 200
+          },
+          {
+            "make": "Thor",
+            "model": "Pro",
+            "latest_order": 1500,
+            "latest_ship_date": "2026-04-29",
+            "rows": 500
+          }
+        ]
+      },
+      {
+        "color": "Black",
+        "models": [
+          {
+            "make": "Thor",
+            "model": "Base",
+            "latest_order": 2100,
+            "latest_ship_date": "2026-05-05",
+            "rows": 250
+          },
+          {
+            "make": "Thor",
+            "model": "Max",
+            "latest_order": 2300,
+            "latest_ship_date": "2026-05-10",
+            "rows": 300
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+---
