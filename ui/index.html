@@ -10,14 +10,14 @@
 body {
 font-family: system-ui;
 background: #f5f6f8;
-padding: 40px;
+padding: 32px;
 }
 
 .container {
 max-width: 520px;
 margin: auto;
 background: white;
-padding: 30px;
+padding: 18px;
 border-radius: 12px;
 box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
@@ -26,8 +26,8 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 background: #f8f9fb;
 border-radius: 10px;
 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-padding: 22px 18px 18px 18px;
-margin-bottom: 24px;
+padding: 16px 12px 12px 12px;
+margin-bottom: 20px;
 }
 
 h1 {
@@ -45,6 +45,7 @@ padding: 10px;
 margin-top: 10px;
 margin-bottom: 20px;
 font-size: 16px;
+box-sizing: border-box;
 }
 
 button {
@@ -100,7 +101,10 @@ margin-top: 10px;
   flex-wrap: wrap;
   gap: 18px 12px;
   padding: 0 18px 0 18px;
+  /* Prevent horizontal scroll on mobile */
+  box-sizing: border-box;
 }
+
 .latest-shipment-color {
   background: linear-gradient(90deg, #f5f6fa 60%, #f0f1f7 100%);
   border-radius: 10px;
@@ -111,7 +115,11 @@ margin-top: 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+
 .latest-shipment-color-title {
   font-weight: 600;
   font-size: 1em;
@@ -121,12 +129,15 @@ margin-top: 10px;
   align-items: center;
   gap: 6px;
 }
+
 .latest-shipment-models {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 7px 8px;
-  overflow-x: auto;
+  overflow-x: visible;
+  width: 100%;
 }
+
 .latest-shipment-pill {
   background: #fff;
   border-radius: 16px;
@@ -139,7 +150,12 @@ margin-top: 10px;
   gap: 5px;
   border: 1px solid #e3e5ea;
   font-weight: 500;
+  margin-bottom: 6px;
+  /* Prevent overflow */
+  max-width: 100%;
+  word-break: break-word;
 }
+
 .latest-shipment-order {
   font-family: monospace;
   font-size: 0.97em;
@@ -191,6 +207,50 @@ margin-top: 10px;
   font-size: 1.1em;
   margin-bottom: 8px;
   color: #ad8b00;
+}
+
+/* --- Responsive Styles --- */
+@media (max-width: 600px) {
+  body {
+    padding: 8px;
+  }
+  .container {
+    padding: 7px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .card {
+    padding: 14px 7px 12px 7px;
+    margin-bottom: 14px;
+    border-radius: 8px;
+  }
+  .latest-shipments-list {
+    gap: 10px 6px;
+    padding: 0 2px 0 2px;
+  }
+  .latest-shipment-color {
+    padding: 10px 7px 7px 7px;
+    min-width: 0;
+    flex: 1 1 120px;
+    max-width: 100%;
+  }
+  .latest-shipment-models {
+    gap: 5px 5px;
+  }
+  .latest-shipment-pill {
+    font-size: 0.95em;
+    padding: 4px 8px 4px 8px;
+    margin-bottom: 4px;
+  }
+  /* --- Remove order number input max-width on mobile for dynamic sizing --- */
+  #shipment {
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
 </style>
 
