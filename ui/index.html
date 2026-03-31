@@ -321,19 +321,42 @@ resultEl.innerHTML = `Request failed: ${err.message}`
 async function loadLatestShipments() {
     const section = document.getElementById("latest-shipments-list");
     section.innerHTML = "<div style='padding:18px 0;color:#888;'>Loading latest shipments...</div>";
-    try {
-        const res = await fetch("/latest");
-        if (!res.ok) {
-            section.innerHTML = "<div style='padding:18px 0;color:#c44;'>Failed to load latest shipments.</div>";
-            return;
+    // Demo fallback data
+    const demoData = [
+        {
+            color: "Black",
+            models: [
+                { model: "Lite", latest_order: "xxxx" },
+                { model: "Base", latest_order: "xxxx" },
+                { model: "Pro", latest_order: "xxxx" },
+                { model: "Max", latest_order: "xxxx" }
+            ]
+        },
+        {
+            color: "White",
+            models: [
+                { model: "Pro", latest_order: "xxxx" },
+                { model: "Max", latest_order: "xxxx" }
+            ]
+        },
+        {
+            color: "Rainbow",
+            models: [
+                { model: "Pro", latest_order: "xxxx" },
+                { model: "Max", latest_order: "xxxx" }
+            ]
+        },
+        {
+            color: "Clear Purple",
+            models: [
+                { model: "Pro", latest_order: "xxxx" },
+                { model: "Max", latest_order: "xxxx" }
+            ]
         }
-        const data = await res.json();
-        if (!data.latest_shipments || !Array.isArray(data.latest_shipments)) {
-            section.innerHTML = "<div style='padding:18px 0;color:#888;'>No latest shipment data available.</div>";
-            return;
-        }
+    ];
+    function renderShipments(data) {
         let html = "";
-        data.latest_shipments.forEach(colorGroup => {
+        data.forEach(colorGroup => {
             html += `<div class=\"latest-shipment-color\">`;
             html += `<div class=\"latest-shipment-color-title\">`;
             html += `<span class=\"latest-shipment-icon\">🚚</span> ${colorGroup.color}</div>`;
@@ -344,8 +367,18 @@ async function loadLatestShipments() {
             html += `</div></div>`;
         });
         section.innerHTML = html;
+    }
+    try {
+        const res = await fetch("/latest");
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        if (!data.latest_shipments || !Array.isArray(data.latest_shipments) || data.latest_shipments.length === 0) {
+            renderShipments(demoData);
+        } else {
+            renderShipments(data.latest_shipments);
+        }
     } catch (e) {
-        section.innerHTML = "<div style='padding:18px 0;color:#c44;'>Error loading latest shipments.</div>";
+        renderShipments(demoData);
     }
 }
 window.addEventListener("DOMContentLoaded", loadLatestShipments);
