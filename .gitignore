@@ -3,3 +3,5 @@ fetched_dashboard.html
 assets/expanded_shipments.csv
 *.joblib
 .venv
+.DS_Store
+__pycache__/
