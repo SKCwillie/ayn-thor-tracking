@@ -4,6 +4,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
 MODEL_PATH = "assets/shipping_model.joblib"
 
@@ -133,6 +134,11 @@ def predict(color: str, model: str, shipment_number: int):
 
     pred_date = pd.Timestamp.fromordinal(int(round(pred_ordinal)))
 
+    # If predicted date is today or in the past, set to tomorrow
+    today = pd.Timestamp.now().normalize()
+    if pred_date.date() <= today.date():
+        pred_date = today + pd.Timedelta(days=1)
+
     meta = training_meta[key]
 
     canonical = canonical_names[key]
@@ -140,6 +146,32 @@ def predict(color: str, model: str, shipment_number: int):
     in_training_range = (
         meta["min_order"] <= shipment_number <= meta["max_order"]
     )
+
+    # If the order has already shipped, return a message
+    if shipment_number <= meta["max_order"]:
+        latest_ship_date = meta["max_date"]
+        # Format the date as YYYY-MM-DD, even if it's a string with time
+        if hasattr(latest_ship_date, 'date'):
+            latest_ship_date_str = latest_ship_date.date().isoformat()
+        else:
+            # Try to parse string and extract date part
+            try:
+                latest_ship_date_str = str(latest_ship_date).split("T")[0].split()[0]
+            except Exception:
+                latest_ship_date_str = str(latest_ship_date)
+        return {
+            "make": canonical[0],
+            "model": canonical[1],
+            "color": canonical[2],
+            "shipment_number": shipment_number,
+            "already_shipped": True,
+            "latest_shipped_order": meta["max_order"],
+            "latest_ship_date": latest_ship_date_str,
+            "message": f"Order #{shipment_number} has already shipped (latest shipped: #{meta['max_order']} on {latest_ship_date_str}).",
+            "model_type": meta["model_type"],
+            "model_version": artifact["model_version"],
+            "trained_at": artifact["trained_at"],
+        }
 
     return {
         "make": canonical[0],
@@ -237,3 +269,11 @@ def latest_shipments():
         "count": len(latest_payload),
         "latest_shipments": latest_payload
     }
+
+
+# -------------------------
+# Favicon
+# -------------------------
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("assets/favicon.png")

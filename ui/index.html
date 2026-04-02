@@ -403,11 +403,19 @@ if (!res.ok) {
 resultEl.innerHTML = `Error: ${JSON.stringify(data)}`
 return
 }
-resultEl.innerHTML =
-`
-Predicted Ship Date:<br>
-<strong>${data.predicted_ship_date}</strong>
-`
+if (data.already_shipped) {
+  // Show already shipped message with muted style for details
+  resultEl.innerHTML = `
+    <strong>Order #${data.shipment_number} has already shipped.</strong><br>
+    <span style="color:#888;">Latest shipped order: <b>#${data.latest_shipped_order}</b></span><br>
+    <span style="color:#888;">Last shipped on: <b>${data.latest_ship_date}</b></span>
+  `
+} else {
+  resultEl.innerHTML = `
+    Predicted Ship Date:<br>
+    <strong>${data.predicted_ship_date}</strong>
+  `
+}
 } catch(err) {
 resultEl.innerHTML = `Request failed: ${err.message}`
 }
