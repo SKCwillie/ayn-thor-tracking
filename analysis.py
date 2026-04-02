@@ -208,6 +208,14 @@ def plot_black_models(output_path=None):
         if model_df.empty:
             ax.set_visible(False)
             continue
+        # Calculate x-axis limits, skipping the first month
+        if not model_df.empty:
+            min_date = model_df["date"].min()
+            # Set start to the first day of the month after min_date
+            if min_date.month == 12:
+                start = pd.Timestamp(year=min_date.year + 1, month=1, day=1)
+            else:
+                start = pd.Timestamp(year=min_date.year, month=min_date.month + 1, day=1)
         ax.plot(
             model_df["date"],
             model_df["end"],
@@ -307,6 +315,14 @@ def plot_color_models(output_path=None):
             if model_df.empty:
                 ax.set_visible(False)
                 continue
+            # Calculate x-axis limits, skipping the first month
+            if not model_df.empty:
+                min_date = model_df["date"].min()
+                # Set start to the first day of the month after min_date
+                if min_date.month == 12:
+                    start = pd.Timestamp(year=min_date.year + 1, month=1, day=1)
+                else:
+                    start = pd.Timestamp(year=min_date.year, month=min_date.month + 1, day=1)
             ax.plot(
                 model_df["date"],
                 model_df["end"],
