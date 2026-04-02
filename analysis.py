@@ -220,12 +220,11 @@ def plot_black_models(output_path=None):
         min_date = pd.Timestamp("2026-01-01")
         # Use the graph's x-axis end for trendline extension
         trendline_max_date = end
-        print(f"Adding trendline for Black {model}: make={make}, min_date={min_date}, max_date={trendline_max_date}")
         dates, preds = get_model_prediction_line(
             models, meta, make, model, "black", min_date, trendline_max_date
         )
+        r2_str = ""
         if dates is not None and preds is not None:
-            print(f"  Trendline points: {len(dates)}")
             ax.plot(
                 dates,
                 preds,
@@ -236,9 +235,43 @@ def plot_black_models(output_path=None):
                 zorder=2,
                 alpha=0.8,
             )
+            # Calculate R^2 for the model on actual data after 2026-01-01
+            reg_key = (
+                make, model, "black"
+            )
+            reg_key_norm = (
+                normalize(make), normalize(model), normalize("black")
+            )
+            normalized_to_actual = {
+                (
+                    normalize(k[0]),
+                    normalize(k[1]),
+                    normalize(k[2])
+                ): k for k in models.keys()
+            }
+            if reg_key_norm in normalized_to_actual:
+                actual_key = normalized_to_actual[reg_key_norm]
+                reg = models[actual_key]
+                filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")]
+                if not filtered_df.empty:
+                    X = filtered_df[["order_number"]] if "order_number" in filtered_df else pd.DataFrame({"order_number": filtered_df["end"]})
+                    y_true = filtered_df["date"].map(pd.Timestamp.toordinal)
+                    r2 = reg.score(X, y_true)
+                    r2_str = f"$R^2$ = {r2:.3f}"
         else:
             print(f"  No model found for Black {model}")
         format_ax(ax, title=f"Black {model}", ylabel="Order Number")
+        # Add R^2 text to the plot (top right corner inside axes)
+        if r2_str:
+            ax.text(
+                0.98, 0.02, r2_str,
+                transform=ax.transAxes,
+                fontsize=13,
+                color="#333",
+                ha="right",
+                va="bottom",
+                bbox=dict(boxstyle="round,pad=0.2", fc="#f8f9fb", ec="#bbb", lw=1, alpha=0.85)
+            )
         handles, labels = ax.get_legend_handles_labels()
         unique = dict(zip(labels, handles))
         ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
@@ -284,12 +317,11 @@ def plot_color_models(output_path=None):
             min_date = pd.Timestamp("2026-01-01")
             # Use the graph's x-axis end for trendline extension
             trendline_max_date = end
-            print(f"Adding trendline for {color_titles[color]} {model}: make={make}, min_date={min_date}, max_date={trendline_max_date}")
             dates, preds = get_model_prediction_line(
                 models, meta, make, model, color, min_date, trendline_max_date
             )
+            r2_str = ""
             if dates is not None and preds is not None:
-                print(f"  Trendline points: {len(dates)}")
                 ax.plot(
                     dates,
                     preds,
@@ -300,9 +332,41 @@ def plot_color_models(output_path=None):
                     zorder=2,
                     alpha=0.8,
                 )
+                reg_key = (
+                    make, model, color
+                )
+                reg_key_norm = (
+                    normalize(make), normalize(model), normalize(color)
+                )
+                normalized_to_actual = {
+                    (
+                        normalize(k[0]),
+                        normalize(k[1]),
+                        normalize(k[2])
+                    ): k for k in models.keys()
+                }
+                if reg_key_norm in normalized_to_actual:
+                    actual_key = normalized_to_actual[reg_key_norm]
+                    reg = models[actual_key]
+                    filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")]
+                    if not filtered_df2.empty:
+                        X = filtered_df2[["order_number"]] if "order_number" in filtered_df2 else pd.DataFrame({"order_number": filtered_df2["end"]})
+                        y_true = filtered_df2["date"].map(pd.Timestamp.toordinal)
+                        r2 = reg.score(X, y_true)
+                        r2_str = f"$R^2$ = {r2:.3f}"
             else:
                 print(f"  No model found for {color_titles[color]} {model}")
             format_ax(ax, title=f"{color_titles[color]} {model}", ylabel="Order Number")
+            if r2_str:
+                ax.text(
+                    0.98, 0.02, r2_str,
+                    transform=ax.transAxes,
+                    fontsize=13,
+                    color="#333",
+                    ha="right",
+                    va="bottom",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="#f8f9fb", ec="#bbb", lw=1, alpha=0.85)
+                )
             handles, labels = ax.get_legend_handles_labels()
             unique = dict(zip(labels, handles))
             ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
