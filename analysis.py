@@ -9,11 +9,11 @@ def format_ax(ax, title=None, ylabel=None):
     ax.xaxis.set_major_locator(mdates.MonthLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
     if title:
-        ax.set_title(title, fontsize=16, fontweight='bold', color='#222', fontname='Comic Sans MS')
+        ax.set_title(title, fontsize=16, fontweight='bold', color='#222', fontname='DejaVu Sans')
     if ylabel:
-        ax.set_ylabel(ylabel, fontsize=16, fontweight='bold', color='#222', fontname='Comic Sans MS')
+        ax.set_ylabel(ylabel, fontsize=16, fontweight='bold', color='#222', fontname='DejaVu Sans')
     ax.grid(True, linestyle='-', linewidth=1.2, color='#888', alpha=0.5)
-    ax.set_facecolor('#E0E0E0')
+    ax.set_facecolor('#F5F6FA')  # Lighter, closer to white
     for spine in ax.spines.values():
         spine.set_linewidth(2)
         spine.set_color('#222')
@@ -123,7 +123,7 @@ def plot_shipping_progress(output_path=None):
     if num_colors == 1:
         axes = [axes]
     plt.style.use('default')
-    fig.patch.set_facecolor('#F0F0F0')
+    fig.patch.set_facecolor('#f8f9fb')
     # Extend x-axis 21 days past last data
     start, end = get_month_range(df["date"], extend_days=21)
     for ax, color in zip(axes, colors):
@@ -154,7 +154,7 @@ def plot_shipping_progress(output_path=None):
                             fontsize=12,
                             fontweight='bold',
                             color=MODEL_COLORS[model],
-                            fontname='Comic Sans MS',
+                            fontname='DejaVu Sans',
                             bbox=dict(boxstyle='round,pad=0.2', fc='#F0F0F0', ec=MODEL_COLORS[model], lw=1)
                         )
         handles, labels = ax.get_legend_handles_labels()
@@ -163,11 +163,12 @@ def plot_shipping_progress(output_path=None):
         ax.legend(ordered_handles, ordered_labels, fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
         format_ax(ax, title=f"{color.title()}")
         ax.set_xlim(start, end)
-    fig.suptitle("AYN Thor Shipping Progress", fontsize=22, fontweight='bold', color='#222', fontname='Comic Sans MS')
-    fig.supylabel("Units Shipped", fontsize=16, fontweight='bold', color='#222', fontname='Comic Sans MS')
+    fig.suptitle("AYN Thor Shipping Progress", fontsize=22, fontweight='bold', color='#222', fontname='DejaVu Sans')
+    fig.supylabel("Units Shipped", fontsize=16, fontweight='bold', color='#222', fontname='DejaVu Sans')
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
+    plt.show()
 
 def plot_orders(model, color, output_path=None):
     df = get_df()
@@ -287,7 +288,7 @@ def plot_black_models(output_path=None):
         ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
         if start is not None and end is not None:
             ax.set_xlim(start, end)
-    fig.suptitle("AYN Thor Black Models Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='Comic Sans MS')
+    fig.suptitle("AYN Thor Black Models Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='DejaVu Sans')
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
@@ -397,7 +398,7 @@ def plot_color_models(output_path=None):
             ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
             if start is not None and end is not None:
                 ax.set_xlim(start, end)
-    fig.suptitle("AYN Thor Special Colors Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='Comic Sans MS')
+    fig.suptitle("AYN Thor Special Colors Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='DejaVu Sans')
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
