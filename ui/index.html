@@ -288,6 +288,50 @@ margin-top: 10px;
     align-items: stretch;
   }
 }
+
+/* --- Image Zoom Modal Styles --- */
+.image-zoom-modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(20,20,20,0.92);
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  transition: background 0.2s;
+}
+.image-zoom-modal.active {
+  display: flex;
+}
+.image-zoom-modal img {
+  max-width: 96vw;
+  max-height: 94vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  object-fit: contain;
+  cursor: zoom-out;
+  transition: box-shadow 0.2s;
+}
+.image-zoom-modal .close-btn {
+  position: absolute;
+  top: 24px;
+  right: 36px;
+  font-size: 2.2em;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 10001;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.image-zoom-modal .close-btn:hover {
+  opacity: 1;
+}
 </style>
 
 </head>
@@ -342,17 +386,17 @@ Estimate when your AYN Thor will ship
         <img
         src="/shipping_progress.png"
         alt="Shipping Progress Chart"
-        class="progress-image"
+        class="progress-image zoomable"
         />
         <img
         src="/black_models_orders.png"
         alt="Black Models Order Distribution"
-        class="progress-image"
+        class="progress-image zoomable"
         />
         <img
         src="/color_models_orders.png"
         alt="Color Models Order Distribution"
-        class="progress-image"
+        class="progress-image zoomable"
         />
 
         </div>
@@ -390,6 +434,12 @@ Estimate when your AYN Thor will ship
   </div>
 </div>
 
+</div>
+
+<!-- Image Zoom Modal -->
+<div class="image-zoom-modal" id="imageZoomModal" tabindex="-1">
+  <button class="close-btn" id="zoomCloseBtn" aria-label="Close">&times;</button>
+  <img id="zoomedImage" src="" alt="Zoomed graph" />
 </div>
 
 <script>
@@ -498,6 +548,58 @@ async function loadLatestShipments() {
     }
 }
 window.addEventListener("DOMContentLoaded", loadLatestShipments);
+
+// --- Image Zoom Feature ---
+(function() {
+  const modal = document.getElementById('imageZoomModal');
+  const zoomedImg = document.getElementById('zoomedImage');
+  const closeBtn = document.getElementById('zoomCloseBtn');
+  const zoomableImages = document.querySelectorAll('.zoomable');
+  let lastFocused = null;
+
+  if (!modal || !zoomedImg || !closeBtn || zoomableImages.length === 0) {
+    return;
+  }
+
+  function openZoom(src, alt) {
+    zoomedImg.src = src;
+    zoomedImg.alt = alt || '';
+    modal.classList.add('active');
+    lastFocused = document.activeElement;
+    closeBtn.focus();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeZoom() {
+    modal.classList.remove('active');
+    zoomedImg.src = '';
+    document.body.style.overflow = '';
+    if (lastFocused) {
+      lastFocused.focus();
+    }
+  }
+
+  zoomableImages.forEach(function(img) {
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', function() {
+      openZoom(img.src, img.alt);
+    });
+  });
+
+  // Click backdrop, close button, or the zoomed image to close.
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal || e.target === closeBtn || e.target === zoomedImg) {
+      closeZoom();
+    }
+  });
+
+  // Escape key closes modal.
+  document.addEventListener('keydown', function(e) {
+    if (modal.classList.contains('active') && (e.key === 'Escape' || e.key === 'Esc')) {
+      closeZoom();
+    }
+  });
+})();
 </script>
 
 </body>
