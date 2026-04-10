@@ -63,14 +63,12 @@ def get_model_prediction_line(models, meta, make, model, color, min_date, max_da
     future_limit = pd.Timestamp(max_date) + pd.Timedelta(days=14)
     date_range = pd.date_range(min_date, future_limit, freq="7D")
     ordinals = date_range.map(pd.Timestamp.toordinal)
-    coef = reg.coef_[0]
-    intercept = reg.intercept_
-    if coef == 0:
-        return None, None
-    order_numbers = (ordinals - intercept) / coef
-    return date_range, order_numbers
+    # Predict max_shipped using date_ordinal
+    X_pred = pd.DataFrame({"date_ordinal": ordinals})
+    max_shipped_pred = reg.predict(X_pred)
+    return date_range, max_shipped_pred
 
-def get_df():
+def get_df(add_current_date_point=False):
     conn = sqlite3.connect(DB_PATH)
     query = """
     SELECT
@@ -97,6 +95,34 @@ def get_df():
     df["calc_units"] = df["calc_units"].fillna(df["units_shipped"])
     df["calc_units"] = df["calc_units"].clip(lower=0)
     df["cumulative"] = df.groupby(["make", "model", "color"])["calc_units"].cumsum()
+    df["max_shipped"] = df.groupby(["make", "model", "color"])["end"].cummax()
+
+    if add_current_date_point:
+        # For each (make, model, color), add a row with the latest 'end' and current date
+        current_date = pd.Timestamp.now().normalize()
+        group_cols = ["make", "model", "color"]
+        last_shipments = df.groupby(group_cols).agg(
+            max_end=("end", "max"),
+            last_date=("date", "max"),
+            last_cumulative=("cumulative", "max")
+        ).reset_index()
+        synthetic_rows = []
+        for _, row in last_shipments.iterrows():
+            synthetic_rows.append({
+                "date": current_date,
+                "make": row["make"],
+                "model": row["model"],
+                "color": row["color"],
+                "begin": row["max_end"],
+                "end": row["max_end"],
+                "units_shipped": 0,
+                "prev_end": row["max_end"],
+                "calc_units": 0,
+                "cumulative": row["last_cumulative"]
+            })
+        if synthetic_rows:
+            df = pd.concat([df, pd.DataFrame(synthetic_rows)], ignore_index=True)
+        df = df.sort_values(["make", "model", "color", "date"]).reset_index(drop=True)
     return df
 
 def get_month_range(dates, extend_days=0):
@@ -113,7 +139,7 @@ def get_month_range(dates, extend_days=0):
     return start, end
 
 def plot_shipping_progress(output_path=None):
-    df = get_df()
+    df = get_df(add_current_date_point=True)
     colors = df["color"].unique()
     num_colors = len(colors)
     cols = 2
@@ -168,10 +194,9 @@ def plot_shipping_progress(output_path=None):
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
-    plt.show()
 
 def plot_orders(model, color, output_path=None):
-    df = get_df()
+    df = get_df(add_current_date_point=True)
     model = model.capitalize()
     color = color.lower()
     filtered = df[(df["model"] == model) & (df["color"] == color)]
@@ -185,11 +210,10 @@ def plot_orders(model, color, output_path=None):
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
-    plt.show()
 
 def plot_black_models(output_path=None):
     print("Plotting black models...")
-    df = get_df()
+    df = get_df(add_current_date_point=True)
     black_df = df[df["color"] == "black"]
     if black_df.empty:
         print("No data for black models.")
@@ -262,12 +286,15 @@ def plot_black_models(output_path=None):
                 actual_key = normalized_to_actual[reg_key_norm]
                 reg = models[actual_key]
                 coef = reg.coef_[0]
-                units_per_day = 1.0 / coef if coef != 0 else 0
+                units_per_day = coef
                 slope_str = f"{units_per_day:.1f} units/day"
-                filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")]
+                filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
                 if not filtered_df.empty:
-                    X = filtered_df[["order_number"]] if "order_number" in filtered_df else pd.DataFrame({"order_number": filtered_df["end"]})
-                    y_true = filtered_df["date"].map(pd.Timestamp.toordinal)
+                    filtered_df["date_ordinal"] = filtered_df["date"].map(pd.Timestamp.toordinal)
+                    # Drop rows with NaN in date_ordinal or end
+                    filtered_df = filtered_df.dropna(subset=["date_ordinal", "end"])
+                    X = filtered_df[["date_ordinal"]]
+                    y_true = filtered_df["end"] if "end" in filtered_df else filtered_df["cumulative"]
                     r2 = reg.score(X, y_true)
                     r2_str = f"$R^2$ = {r2:.3f}"
         else:
@@ -296,7 +323,7 @@ def plot_black_models(output_path=None):
 
 def plot_color_models(output_path=None):
     print("Plotting special color models...")
-    df = get_df()
+    df = get_df(add_current_date_point=True)
     special_colors = ["white", "clear purple", "rainbow"]
     special_models = ["Pro", "Max"]
     color_titles = {"white": "White", "clear purple": "Clear Purple", "rainbow": "Rainbow"}
@@ -369,15 +396,15 @@ def plot_color_models(output_path=None):
                     actual_key = normalized_to_actual[reg_key_norm]
                     reg = models[actual_key]
                     coef = reg.coef_[0]
-                    units_per_day = 1.0 / coef if coef != 0 else 0
+                    units_per_day = coef
                     slope_str = f"{units_per_day:.1f} units/day"
-                    filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")]
+                    filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
                     if not filtered_df2.empty:
-                        if "order_number" in filtered_df2:
-                            X = filtered_df2[["order_number"]]
-                        else:
-                            X = pd.DataFrame({"order_number": filtered_df2["end"]})
-                        y_true = filtered_df2["date"].map(pd.Timestamp.toordinal)
+                        filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
+                        # Drop rows with NaN in date_ordinal or end
+                        filtered_df2 = filtered_df2.dropna(subset=["date_ordinal", "end"])
+                        X = filtered_df2[["date_ordinal"]]
+                        y_true = filtered_df2["end"] if "end" in filtered_df2 else filtered_df2["cumulative"]
                         r2 = reg.score(X, y_true)
                         r2_str = f"$R^2$ = {r2:.3f}"
             else:
