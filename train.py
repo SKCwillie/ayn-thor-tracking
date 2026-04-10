@@ -158,7 +158,7 @@ def train_models(expanded_df: pd.DataFrame) -> dict:
         "models": models,
         "training_meta": training_meta,
         "trained_at": datetime.now().astimezone().isoformat(),
-        "model_version": "v1",
+        "model_version": "v2",
         "feature_columns": ["date_ordinal"],
     }
 
