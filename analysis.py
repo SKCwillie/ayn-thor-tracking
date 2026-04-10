@@ -95,6 +95,7 @@ def get_df(add_current_date_point=False):
     df["calc_units"] = df["calc_units"].fillna(df["units_shipped"])
     df["calc_units"] = df["calc_units"].clip(lower=0)
     df["cumulative"] = df.groupby(["make", "model", "color"])["calc_units"].cumsum()
+    df["max_shipped"] = df.groupby(["make", "model", "color"])["end"].cummax()
 
     if add_current_date_point:
         # For each (make, model, color), add a row with the latest 'end' and current date
@@ -193,7 +194,6 @@ def plot_shipping_progress(output_path=None):
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
-    plt.show()
 
 def plot_orders(model, color, output_path=None):
     df = get_df(add_current_date_point=True)
@@ -210,7 +210,6 @@ def plot_orders(model, color, output_path=None):
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
         plt.savefig(output_path)
-    plt.show()
 
 def plot_black_models(output_path=None):
     print("Plotting black models...")
@@ -287,13 +286,15 @@ def plot_black_models(output_path=None):
                 actual_key = normalized_to_actual[reg_key_norm]
                 reg = models[actual_key]
                 coef = reg.coef_[0]
-                units_per_day = 1.0 / coef if coef != 0 else 0
+                units_per_day = coef
                 slope_str = f"{units_per_day:.1f} units/day"
                 filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
                 if not filtered_df.empty:
                     filtered_df["date_ordinal"] = filtered_df["date"].map(pd.Timestamp.toordinal)
+                    # Drop rows with NaN in date_ordinal or end
+                    filtered_df = filtered_df.dropna(subset=["date_ordinal", "end"])
                     X = filtered_df[["date_ordinal"]]
-                    y_true = filtered_df["end"]
+                    y_true = filtered_df["end"] if "end" in filtered_df else filtered_df["cumulative"]
                     r2 = reg.score(X, y_true)
                     r2_str = f"$R^2$ = {r2:.3f}"
         else:
@@ -395,14 +396,17 @@ def plot_color_models(output_path=None):
                     actual_key = normalized_to_actual[reg_key_norm]
                     reg = models[actual_key]
                     coef = reg.coef_[0]
-                    units_per_day = 1.0 / coef if coef != 0 else 0
+                    units_per_day = coef
                     slope_str = f"{units_per_day:.1f} units/day"
                     filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
-                    filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
-                    X = filtered_df2[["date_ordinal"]]
-                    y_true = filtered_df2["end"]
-                    r2 = reg.score(X, y_true)
-                    r2_str = f"$R^2$ = {r2:.3f}"
+                    if not filtered_df2.empty:
+                        filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
+                        # Drop rows with NaN in date_ordinal or end
+                        filtered_df2 = filtered_df2.dropna(subset=["date_ordinal", "end"])
+                        X = filtered_df2[["date_ordinal"]]
+                        y_true = filtered_df2["end"] if "end" in filtered_df2 else filtered_df2["cumulative"]
+                        r2 = reg.score(X, y_true)
+                        r2_str = f"$R^2$ = {r2:.3f}"
             else:
                 print(f"  No model found for {color_titles[color]} {model}")
             format_ax(ax, title=f"{color_titles[color]} {model}", ylabel="Order Number")
