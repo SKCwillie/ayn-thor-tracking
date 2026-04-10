@@ -82,38 +82,43 @@ def load_raw_data(db_path: str, table_name: str) -> pd.DataFrame:
     return df
 
 
-def expand_ranges(df: pd.DataFrame) -> pd.DataFrame:
+def expand_to_daily_max_shipped(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Expand each begin/end range so each order number gets its own row.
+    For each (make, model, color), create a row for every day from the earliest shipment date to today.
+    For each day, set 'max_shipped' to the highest order number shipped as of that day (carry forward last known value).
     """
-    expanded_rows = []
-
-    for _, row in df.iterrows():
-        for order_number in range(row["begin"], row["end_order"] + 1):
-            expanded_rows.append(
-                {
-                    "make": row["make"],
-                    "model": row["model"],
-                    "color": row["color"],
-                    "order_number": order_number,
-                    "ship_date": row["date"],
-                }
-            )
-
-    expanded_df = pd.DataFrame(expanded_rows)
-
-    if expanded_df.empty:
-        raise ValueError("Expanded dataframe is empty")
-
-    expanded_df["date_ordinal"] = expanded_df["ship_date"].map(pd.Timestamp.toordinal)
-
+    all_daily_rows = []
+    today = pd.Timestamp.now().normalize()
+    group_cols = ["make", "model", "color"]
+    for group, group_df in df.groupby(group_cols):
+        group_df = group_df.sort_values("date")
+        min_date = group_df["date"].min().normalize()
+        date_range = pd.date_range(min_date, today, freq="D")
+        # Build a DataFrame with all dates
+        daily = pd.DataFrame({"date": date_range})
+        # For each shipment, set the max shipped for that date
+        shipments = group_df[["date", "end_order"]].copy()
+        shipments = shipments.groupby("date")["end_order"].max().reset_index()
+        # Merge and forward fill
+        daily = daily.merge(shipments, on="date", how="left")
+        daily["end_order"] = daily["end_order"].ffill().fillna(0).astype(int)
+        # Ensure group is always a tuple
+        if not isinstance(group, tuple):
+            group = (group,)
+        daily["make"] = group[0]
+        daily["model"] = group[1]
+        daily["color"] = group[2]
+        all_daily_rows.append(daily)
+    expanded_df = pd.concat(all_daily_rows, ignore_index=True)
+    expanded_df = expanded_df.rename(columns={"end_order": "max_shipped"})
+    expanded_df["date_ordinal"] = expanded_df["date"].map(pd.Timestamp.toordinal)
     return expanded_df
 
 
 def train_models(expanded_df: pd.DataFrame) -> dict:
     """
     Train one model per (make, model, color).
-
+    X = date_ordinal, y = max_shipped
     Returns an artifact dict ready to be saved with joblib.
     """
     models = {}
@@ -122,31 +127,28 @@ def train_models(expanded_df: pd.DataFrame) -> dict:
     grouped = expanded_df.groupby(["make", "model", "color"], dropna=False)
 
     for key, group in grouped:
-        group = group.sort_values("order_number").copy()
-
-        X = group[["order_number"]]
-        y = group["date_ordinal"]
+        group = group.sort_values("date_ordinal").copy()
+        X = group[["date_ordinal"]]
+        y = group["max_shipped"]
 
         row_count = len(group)
-        min_order = int(group["order_number"].min())
-        max_order = int(group["order_number"].max())
-        min_date = group["ship_date"].min()
-        max_date = group["ship_date"].max()
+        min_date = group["date"].min()
+        max_date = group["date"].max()
+        min_shipped = int(group["max_shipped"].min())
+        max_shipped = int(group["max_shipped"].max())
 
-        # Use LinearRegression for all groups to support extrapolation.
         model = LinearRegression()
         model_type = "linear_regression"
-
         model.fit(X, y)
 
         models[key] = model
         training_meta[key] = {
             "model_type": model_type,
             "row_count": row_count,
-            "min_order": min_order,
-            "max_order": max_order,
             "min_date": min_date.isoformat(),
             "max_date": max_date.isoformat(),
+            "min_shipped": min_shipped,
+            "max_shipped": max_shipped,
         }
 
     if not models:
@@ -155,9 +157,9 @@ def train_models(expanded_df: pd.DataFrame) -> dict:
     artifact = {
         "models": models,
         "training_meta": training_meta,
-        "trained_at": datetime.utcnow().isoformat() + "Z",
+        "trained_at": datetime.now().astimezone().isoformat(),
         "model_version": "v1",
-        "feature_columns": ["order_number"],
+        "feature_columns": ["date_ordinal"],
     }
 
     return artifact
@@ -180,7 +182,7 @@ def print_summary(raw_df: pd.DataFrame, expanded_df: pd.DataFrame, artifact: dic
             f"  {key} | "
             f"type={meta['model_type']} | "
             f"rows={meta['row_count']} | "
-            f"orders={meta['min_order']}-{meta['max_order']}"
+            f"shipped={meta['min_shipped']}-{meta['max_shipped']}"
         )
 
 
@@ -205,7 +207,7 @@ def create_model():
     raw_df = load_raw_data(args.db, args.table)
 
     print("Expanding shipment ranges into one row per order...")
-    expanded_df = expand_ranges(raw_df)
+    expanded_df = expand_to_daily_max_shipped(raw_df)
 
     if args.save_expanded_csv:
         # Ensure the path is in the assets folder

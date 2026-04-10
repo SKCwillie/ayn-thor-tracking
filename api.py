@@ -76,10 +76,12 @@ def startup():
 # -------------------------
 @app.get("/")
 def root():
+    if not artifact:
+        return {"status": "error", "message": "Model not loaded"}
     return {
         "status": "running",
-        "model_version": artifact["model_version"],
-        "trained_at": artifact["trained_at"],
+        "model_version": artifact.get("model_version", None),
+        "trained_at": artifact.get("trained_at", None),
         "available_models": len(models),
     }
 
@@ -101,6 +103,8 @@ def health():
 # -------------------------
 @app.get("/{color}/{model}/{shipment_number}")
 def predict(color: str, model: str, shipment_number: int):
+    if not artifact:
+        raise HTTPException(status_code=503, detail="Model not loaded")
 
     normalized_color = normalize(color)
     normalized_model = normalize(model)
@@ -128,10 +132,41 @@ def predict(color: str, model: str, shipment_number: int):
 
     reg = models[key]
 
-    pred_ordinal = reg.predict(
-        pd.DataFrame({"order_number": [shipment_number]})
-    )[0]
+    meta = training_meta[key]
 
+    # Use the correct feature name for prediction
+    # Try to get the expected feature name from training_meta, fallback to 'date_ordinal'
+    feature_name = None
+    if "feature_name" in meta:
+        feature_name = meta["feature_name"]
+    elif "feature_names" in meta and isinstance(meta["feature_names"], list) and len(meta["feature_names"]) == 1:
+        feature_name = meta["feature_names"][0]
+    else:
+        # fallback to the most common expected name
+        feature_name = "date_ordinal"
+
+    # Invert the regression: shipment_number = coef * date_ordinal + intercept
+    # => date_ordinal = (shipment_number - intercept) / coef
+    coef = reg.coef_[0]
+    intercept = reg.intercept_
+    if coef == 0:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Model regression coefficient is zero, cannot invert.",
+                "note": "Check model training."
+            }
+        )
+    pred_ordinal = (shipment_number - intercept) / coef
+    if pred_ordinal < 1:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Predicted date ordinal is invalid (must be >= 1)",
+                "pred_ordinal": pred_ordinal,
+                "note": "Check model training and input features."
+            }
+        )
     pred_date = pd.Timestamp.fromordinal(int(round(pred_ordinal)))
 
     # If predicted date is today or in the past, set to tomorrow
@@ -139,16 +174,14 @@ def predict(color: str, model: str, shipment_number: int):
     if pred_date.date() <= today.date():
         pred_date = today + pd.Timedelta(days=1)
 
-    meta = training_meta[key]
-
     canonical = canonical_names[key]
 
     in_training_range = (
-        meta["min_order"] <= shipment_number <= meta["max_order"]
+        meta["min_shipped"] <= shipment_number <= meta["max_shipped"]
     )
 
     # If the order has already shipped, return a message
-    if shipment_number <= meta["max_order"]:
+    if shipment_number <= meta["max_shipped"]:
         latest_ship_date = meta["max_date"]
         # Format the date as YYYY-MM-DD, even if it's a string with time
         if hasattr(latest_ship_date, 'date'):
@@ -165,9 +198,9 @@ def predict(color: str, model: str, shipment_number: int):
             "color": canonical[2],
             "shipment_number": shipment_number,
             "already_shipped": True,
-            "latest_shipped_order": meta["max_order"],
+            "latest_shipped_order": meta["max_shipped"],
             "latest_ship_date": latest_ship_date_str,
-            "message": f"Order #{shipment_number} has already shipped (latest shipped: #{meta['max_order']} on {latest_ship_date_str}).",
+            "message": f"Order #{shipment_number} has already shipped (latest shipped: #{meta['max_shipped']} on {latest_ship_date_str}).",
             "model_type": meta["model_type"],
             "model_version": artifact["model_version"],
             "trained_at": artifact["trained_at"],
@@ -181,8 +214,8 @@ def predict(color: str, model: str, shipment_number: int):
         "predicted_ship_date": pred_date.date().isoformat(),
         "in_training_range": in_training_range,
         "training_order_range": [
-            meta["min_order"],
-            meta["max_order"]
+            meta["min_shipped"],
+            meta["max_shipped"]
         ],
         "model_type": meta["model_type"],
         "model_version": artifact["model_version"],
@@ -195,6 +228,8 @@ def predict(color: str, model: str, shipment_number: int):
 # -------------------------
 @app.get("/models")
 def list_models():
+    if not artifact:
+        return {"status": "error", "message": "Model not loaded"}
 
     results = []
 
@@ -208,8 +243,8 @@ def list_models():
             "color": canonical[2],
             "rows": meta["row_count"],
             "order_range": [
-                meta["min_order"],
-                meta["max_order"]
+                meta["min_shipped"],
+                meta["max_shipped"]
             ]
         })
 
@@ -224,6 +259,9 @@ def list_models():
 # -------------------------
 @app.get("/latest")
 def latest_shipments():
+    if not artifact:
+        return {"status": "error", "message": "Model not loaded"}
+
     """
     Return the latest shipping info grouped by color, with models ordered as Lite, Base, Pro, Max.
     """
@@ -241,7 +279,7 @@ def latest_shipments():
         entry = {
             "make": make,
             "model": model,
-            "latest_order": meta["max_order"],
+            "latest_order": meta["max_shipped"],
             "latest_ship_date": meta["max_date"],
             "rows": meta["row_count"]
         }
