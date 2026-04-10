@@ -14,7 +14,7 @@ padding: 32px;
 }
 
 .container {
-max-width: 520px;
+max-width: 580px;
 margin: auto;
 background: white;
 padding: 18px;
@@ -94,12 +94,23 @@ font-weight: 500;
 text-decoration: none;
 transition: background 0.18s, border 0.18s, color 0.18s;
 box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+min-width: 170px;
+text-align: center;
 }
 .github-secondary-btn:hover,
 .github-secondary-btn:focus {
 background: #e9eaf0;
 border-color: #bdbdbd;
 color: #111;
+}
+
+/* Flex container for equal-width secondary buttons */
+.github-secondary-btn-row {
+display: flex;
+justify-content: center;
+gap: 12px;
+margin-top: 0;
+margin-bottom: 0;
 }
 
 /* Hide old .github-link style for these links */
@@ -271,6 +282,11 @@ margin-top: 10px;
     margin-left: 0;
     margin-right: 0;
   }
+  .github-secondary-btn-row {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
 }
 </style>
 
@@ -344,21 +360,22 @@ Estimate when your AYN Thor will ship
         <div style="margin-top:8px;font-size:12px;color:#777;">
         Model updates nightly • Open Source
         </div>
-
-        <a
-          class="github-secondary-btn"
-          href="https://github.com/SKCwillie/ayn-thor-tracking"
-          target="_blank"
-        >
-          View Source Code
-        </a>
-        <a
-          class="github-secondary-btn"
-          href="https://github.com/SKCwillie/ayn-thor-tracking/issues"
-          target="_blank"
-        >
-          Report an Issue
-        </a>
+        <div class="github-secondary-btn-row">
+          <a
+            class="github-secondary-btn"
+            href="https://github.com/SKCwillie/ayn-thor-tracking"
+            target="_blank"
+          >
+            View Source Code
+          </a>
+          <a
+            class="github-secondary-btn"
+            href="https://github.com/SKCwillie/ayn-thor-tracking/issues"
+            target="_blank"
+          >
+            Report an Issue
+          </a>
+        </div>
     </div>
 </div>
 
