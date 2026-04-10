@@ -224,23 +224,16 @@ def plot_black_models(output_path=None):
     axes = axes.flatten()
     # Extend x-axis 21 days past last data
     if not black_df.empty:
-        start, end = get_month_range(black_df["date"], extend_days=21)
+        _, end = get_month_range(black_df["date"], extend_days=21)
     else:
-        start, end = None, None
+        end = None
+    start = pd.Timestamp("2026-01-01")
     for idx, model in enumerate(MODEL_ORDER):
         ax = axes[idx]
         model_df = black_df[black_df["model"] == model]
         if model_df.empty:
             ax.set_visible(False)
             continue
-        # Calculate x-axis limits, skipping the first month
-        if not model_df.empty:
-            min_date = model_df["date"].min()
-            # Set start to the first day of the month after min_date
-            if min_date.month == 12:
-                start = pd.Timestamp(year=min_date.year + 1, month=1, day=1)
-            else:
-                start = pd.Timestamp(year=min_date.year, month=min_date.month + 1, day=1)
         ax.plot(
             model_df["date"],
             model_df["end"],
