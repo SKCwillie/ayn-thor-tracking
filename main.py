@@ -4,7 +4,7 @@ from train import create_model
 
 if __name__ == "__main__":
     print("Starting data scraping...")
-    #scrape()  # Scrape data and save to SQLite
+    scrape()  # Scrape data and save to SQLite
 
     print("\nStarting model training...")
     create_model()  # Train models and save artifact
