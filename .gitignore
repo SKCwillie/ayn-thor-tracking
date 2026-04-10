@@ -5,3 +5,4 @@ assets/expanded_shipments.csv
 .venv
 .DS_Store
 __pycache__/
+ui/*.png

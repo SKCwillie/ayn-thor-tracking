@@ -1,0 +1,56 @@
+<!-- ...existing code... -->
+<style>
+/* ...existing code... */
+.zoom-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.zoom-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 0 20px #000;
+  cursor: zoom-out;
+  background: #fff;
+  border-radius: 8px;
+}
+</style>
+<!-- ...existing code... -->
+<body>
+<!-- ...existing code... -->
+<img id="zoomable-image" src="your-image.jpg" alt="Zoomable" style="cursor: zoom-in;">
+<!-- ...existing code... -->
+<div id="zoom-overlay" class="zoom-overlay" style="display:none;">
+  <img id="zoomed-img" src="" alt="">
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const img = document.getElementById('zoomable-image');
+  const overlay = document.getElementById('zoom-overlay');
+  const zoomedImg = document.getElementById('zoomed-img');
+
+  if (img && overlay && zoomedImg) {
+    img.addEventListener('click', function() {
+      zoomedImg.src = img.src;
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+
+    overlay.addEventListener('click', function(e) {
+      // Only close if background or zoomed image is clicked
+      if (e.target === overlay || e.target === zoomedImg) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        zoomedImg.src = '';
+      }
+    });
+  }
+});
+</script>
+<!-- ...existing code... -->
+</body>
+<!-- ...existing code... -->
