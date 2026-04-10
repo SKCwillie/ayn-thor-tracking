@@ -332,6 +332,29 @@ margin-top: 10px;
 .image-zoom-modal .close-btn:hover {
   opacity: 1;
 }
+
+/* --- Page Header Styles --- */
+.page-header {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.42)), url('header.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+  border-radius: 12px;
+  padding: 36px 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.page-header .subtitle {
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 0;
+}
 </style>
 
 </head>
@@ -340,10 +363,10 @@ margin-top: 10px;
 
 <div class="container">
 
-<h1>AYN Thor Shipping Tracker</h1>
-<div class="subtitle">
-Estimate when your AYN Thor will ship
-</div>
+<section class="page-header">
+  <h1>AYN Shipping Tracker</h1>
+  <div class="subtitle">Estimate when your AYN Thor will ship</div>
+</section>
 
 <!-- Input Card -->
 <div class="card">
