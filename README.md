@@ -1,5 +1,27 @@
-## Get a Shipping Prediction
+l## Get a Shipping Prediction
 http://ayn-thor-tracker.com/
+
+ ht## Local Testing
+
+Run both backend and frontend locally with one command:
+
+```bash
+cd /Users/robert/PycharmProjects/ayn-thor-shipping
+source .venv/bin/activate
+python run_local.py
+```
+
+Default URLs:
+
+- Frontend: `http://127.0.0.1:8000`
+- Backend: `http://127.0.0.1:8001`
+
+Optional flags:
+
+```bash
+python run_local.py --host 127.0.0.1 --frontend-port 8000 --backend-port 8001
+python run_local.py --no-reload
+```
 
 
 ## Current Shipping Progress

@@ -30,6 +30,21 @@ def normalize(value: str) -> str:
     return re.sub(r"[\s\-_]", "", value).lower()
 
 
+def format_meta_date(meta: dict, preferred_key: str = "latest_ship_date") -> str:
+    """Return YYYY-MM-DD from metadata date fields with backward-compatible fallback."""
+    raw_date = meta.get(preferred_key) or meta.get("max_date")
+    if raw_date is None:
+        return ""
+
+    if hasattr(raw_date, "date"):
+        return raw_date.date().isoformat()
+
+    try:
+        return str(raw_date).split("T")[0].split()[0]
+    except Exception:
+        return str(raw_date)
+
+
 # -------------------------
 # Load Model
 # -------------------------
@@ -182,16 +197,7 @@ def predict(color: str, model: str, shipment_number: int):
 
     # If the order has already shipped, return a message
     if shipment_number <= meta["max_shipped"]:
-        latest_ship_date = meta["max_date"]
-        # Format the date as YYYY-MM-DD, even if it's a string with time
-        if hasattr(latest_ship_date, 'date'):
-            latest_ship_date_str = latest_ship_date.date().isoformat()
-        else:
-            # Try to parse string and extract date part
-            try:
-                latest_ship_date_str = str(latest_ship_date).split("T")[0].split()[0]
-            except Exception:
-                latest_ship_date_str = str(latest_ship_date)
+        latest_ship_date_str = format_meta_date(meta)
         return {
             "make": canonical[0],
             "model": canonical[1],
@@ -280,7 +286,7 @@ def latest_shipments():
             "make": make,
             "model": model,
             "latest_order": meta["max_shipped"],
-            "latest_ship_date": meta["max_date"],
+            "latest_ship_date": format_meta_date(meta),
             "rows": meta["row_count"]
         }
         if color not in color_dict:

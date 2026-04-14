@@ -115,7 +115,7 @@ def expand_to_daily_max_shipped(df: pd.DataFrame) -> pd.DataFrame:
     return expanded_df
 
 
-def train_models(expanded_df: pd.DataFrame) -> dict:
+def train_models(expanded_df: pd.DataFrame, raw_df: pd.DataFrame) -> dict:
     """
     Train one model per (make, model, color).
     X = date_ordinal, y = max_shipped
@@ -125,6 +125,7 @@ def train_models(expanded_df: pd.DataFrame) -> dict:
     training_meta = {}
 
     grouped = expanded_df.groupby(["make", "model", "color"], dropna=False)
+    latest_ship_date_map = raw_df.groupby(["make", "model", "color"], dropna=False)["date"].max()
 
     for key, group in grouped:
         group = group.sort_values("date_ordinal").copy()
@@ -142,11 +143,16 @@ def train_models(expanded_df: pd.DataFrame) -> dict:
         model.fit(X, y)
 
         models[key] = model
+        latest_ship_date = latest_ship_date_map.get(key, pd.NaT)
+        if pd.isna(latest_ship_date):
+            latest_ship_date = max_date
+
         training_meta[key] = {
             "model_type": model_type,
             "row_count": row_count,
             "min_date": min_date.isoformat(),
             "max_date": max_date.isoformat(),
+            "latest_ship_date": pd.Timestamp(latest_ship_date).isoformat(),
             "min_shipped": min_shipped,
             "max_shipped": max_shipped,
         }
@@ -224,7 +230,7 @@ def create_model():
         print(f"Expanded data saved to {save_path}")
 
     print("Training models...")
-    artifact = train_models(expanded_df)
+    artifact = train_models(expanded_df, raw_df)
 
     output_path = Path(args.output)
     joblib.dump(artifact, output_path)

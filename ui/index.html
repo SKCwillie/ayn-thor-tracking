@@ -109,8 +109,10 @@ color: #111;
 display: flex;
 justify-content: center;
 gap: 12px;
-margin-top: 0;
+margin-top: 10px;
 margin-bottom: 0;
+padding-top: 10px;
+border-top: 1px solid #e6e8ee;
 }
 
 /* Hide old .github-link style for these links */
@@ -128,33 +130,26 @@ margin-top: 10px;
 }
 
 .latest-shipments-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px 12px;
-  padding: 0 18px 0 18px;
-  /* Prevent horizontal scroll on mobile */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 18px;
   box-sizing: border-box;
 }
 
 .latest-shipment-color {
-  background: linear-gradient(90deg, #f5f6fa 60%, #f0f1f7 100%);
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-  padding: 14px 16px 10px 16px;
-  min-width: 180px;
-  flex: 1 1 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 100%;
+  background: #fff;
+  border: 1px solid #e6e8ee;
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .latest-shipment-color-title {
   font-weight: 600;
-  font-size: 1em;
-  margin-bottom: 7px;
+  font-size: 0.98em;
+  margin-bottom: 8px;
   letter-spacing: 0.01em;
   display: flex;
   align-items: center;
@@ -162,66 +157,101 @@ margin-top: 10px;
 }
 
 .latest-shipment-models {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 8px;
-  overflow-x: visible;
   width: 100%;
 }
 
-.latest-shipment-pill {
-  background: #fff;
-  border-radius: 16px;
-  padding: 4px 12px 4px 10px;
-  font-size: 0.97em;
-  color: #222;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  display: flex;
+.latest-shipment-head,
+.latest-shipment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px 64px;
   align-items: center;
-  gap: 5px;
-  border: 1px solid #e3e5ea;
-  font-weight: 500;
-  margin-bottom: 6px;
-  /* Prevent overflow */
-  max-width: 100%;
-  word-break: break-word;
+  gap: 14px;
+}
+
+.latest-shipment-head {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a92a2;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.latest-shipment-row {
+  font-size: 0.92em;
+  padding: 9px 0;
+  border-bottom: 1px solid #f1f3f7;
+}
+
+.latest-shipment-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.latest-shipment-model {
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 0;
 }
 
 .latest-shipment-order {
-  font-family: monospace;
-  font-size: 0.97em;
-  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.88em;
+  color: #4b5563;
+  background: #f4f6fa;
+  border: 1px solid #e5e9f1;
+  border-radius: 7px;
   padding: 2px 7px;
-  margin-left: 2px;
-  font-weight: 600;
-  /* Default style, will be overridden by model-specific classes */
-  background: #eafbe7;
-  color: #4a6;
+  justify-self: end;
 }
-.latest-shipment-order.lite {
-  background: #fffbe6;
-  color: #ad8b00;
-  border: 1px solid #ffe58f;
+
+.latest-shipment-head-model {
+  justify-self: start;
 }
-.latest-shipment-order.base {
-  background: #fff1f0;
-  color: #cf1322;
-  border: 1px solid #ffa39e;
+
+.latest-shipment-head-order,
+.latest-shipment-head-date {
+  justify-self: end;
+  text-align: right;
 }
-.latest-shipment-order.pro {
-  background: #f9f0ff;
-  color: #722ed1;
-  border: 1px solid #d3adf7;
+
+.latest-shipment-head-date,
+.latest-shipment-date {
+  padding-left: 8px;
 }
-.latest-shipment-order.max {
-  background: #f6ffed;
-  color: #389e0d;
-  border: 1px solid #b7eb8f;
+
+.latest-shipment-date {
+  font-size: 0.88em;
+  color: #6b7280;
+  justify-self: end;
+  text-align: right;
 }
+
 .latest-shipment-icon {
-  font-size: 1.1em;
-  color: #4a6;
-  margin-right: 2px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9ca3af;
+  border: 1px solid transparent;
+  flex: 0 0 10px;
+}
+
+.latest-shipment-icon-black {
+  background: #111;
+}
+
+.latest-shipment-icon-white {
+  background: #fff;
+  border-color: #9ca3af;
+}
+
+.latest-shipment-icon-purple {
+  background: #8b5cf6;
+}
+
+.latest-shipment-icon-rainbow {
+  background: #9aa0a6;
 }
 
 /* Disclaimer Styles */
@@ -256,36 +286,42 @@ margin-top: 10px;
     border-radius: 8px;
   }
   .latest-shipments-list {
-    gap: 10px 6px;
-    padding: 0 2px 0 2px;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0 2px;
   }
   .latest-shipment-color {
-    padding: 10px 7px 7px 7px;
-    min-width: 0;
-    flex: 1 1 120px;
-    max-width: 100%;
+    padding: 10px;
   }
-  .latest-shipment-models {
-    gap: 5px 5px;
+  .latest-shipment-head,
+  .latest-shipment-row {
+    grid-template-columns: minmax(0, 1fr) 84px 56px;
+    gap: 10px;
   }
-  .latest-shipment-pill {
-    font-size: 0.95em;
-    padding: 4px 8px 4px 8px;
-    margin-bottom: 4px;
+  .latest-shipment-head-date,
+  .latest-shipment-date {
+    padding-left: 6px;
   }
-  /* --- Remove order number input max-width on mobile for dynamic sizing --- */
-  #shipment {
-    max-width: none;
-    width: 100%;
-    box-sizing: border-box;
-    display: block;
-    margin-left: 0;
-    margin-right: 0;
+  .latest-shipment-row {
+    font-size: 0.88em;
+  }
+  .latest-shipment-order {
+    font-size: 0.84em;
+    padding: 2px 6px;
+  }
+  .latest-shipment-date {
+    text-align: right;
   }
   .github-secondary-btn-row {
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
+  }
+  .github-secondary-btn {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    box-sizing: border-box;
   }
 }
 
@@ -320,6 +356,14 @@ margin-top: 10px;
   position: absolute;
   top: 24px;
   right: 36px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
   font-size: 2.2em;
   color: #fff;
   background: none;
@@ -398,7 +442,7 @@ margin-top: 10px;
 <div class="card" id="latest-shipments-section" style="margin-top:0; padding: 0 0 18px 0;">
     <div style="padding: 18px 18px 0 18px;">
         <h1 style="font-size:1.1em;margin-bottom:2px;letter-spacing:0.01em;">Latest Shipments</h1>
-        <div style="font-size:13px;color:#888;margin-bottom:10px;">Most recent fulfilled orders by color & model</div>
+        <div style="font-size:13px;color:#888;margin-bottom:10px;">Most recentlyy fulfilled orders</div>
     </div>
     <div id="latest-shipments-list" class="latest-shipments-list"></div>
 </div>
@@ -453,7 +497,8 @@ margin-top: 10px;
   <h2 style="font-size:1.1em; margin-bottom:8px; color:#ad8b00; font-weight:600; letter-spacing:0.01em;">Disclaimer</h2>
   <div style="font-size:15px; color:#7c6f3c; line-height:1.7;">
     This tracker is a best-effort estimate based on shipping data reported by AYN and observed trends. It's meant to give a general idea of progress — not a static prediction.<br><br>
-    Shipping timelines can change for many reasons outside of this tracker’s control, such as production delays, RAM or component shortages, shipping/logistics issues, or changes in AYN’s fulfillment priorities.<br><br>
+    <b>This tool only works for orders placed directly through AYN.</b> Orders from third-party retailers such as AliExpress, Amazon, or other resellers are not tracked here and will not return accurate results.<br><br>
+    Shipping timelines can change for many reasons outside of this tracker's scope, such as production delays, RAM or component shortages, shipping/logistics issues, or changes in AYN's fulfillment priorities.<br><br>
     Because of this, actual shipping may move faster or slower than shown here. While the data comes from AYN, future shipping progress is still an estimate and things can shift quickly.<br><br>
     <b>This project is not affiliated with AYN</b> — just a community tool built to help everyone get a rough sense of where things stand.
   </div>
@@ -544,16 +589,40 @@ resultEl.innerHTML = `Request failed: ${err.message}`
 async function loadLatestShipments() {
     const section = document.getElementById("latest-shipments-list");
     section.innerHTML = "<div style='padding:18px 0;color:#888;'>Loading latest shipments...</div>";
+    function formatShipDate(rawDate) {
+        if (!rawDate) return "date unavailable";
+        const isoDate = String(rawDate).split("T")[0];
+        const parsed = new Date(`${isoDate}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) return isoDate;
+        return parsed.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
     function renderShipments(data) {
         let html = "";
         data.forEach(colorGroup => {
-            html += `<div class=\"latest-shipment-color\">`;
-            html += `<div class=\"latest-shipment-color-title\">`;
-            html += `<span class=\"latest-shipment-icon\">🚚</span> ${colorGroup.color}</div>`;
-            html += `<div class=\"latest-shipment-models\">`;
+            const colorName = String(colorGroup.color || "").toLowerCase();
+            let colorDotClass = "latest-shipment-icon";
+            if (colorName.includes("black")) {
+                colorDotClass += " latest-shipment-icon-black";
+            } else if (colorName.includes("white")) {
+                colorDotClass += " latest-shipment-icon-white";
+            } else if (colorName.includes("purple")) {
+                colorDotClass += " latest-shipment-icon-purple";
+            } else if (colorName.includes("rainbow")) {
+                colorDotClass += " latest-shipment-icon-rainbow";
+            }
+
+            html += `<div class="latest-shipment-color">`;
+            html += `<div class="latest-shipment-color-title">`;
+            html += `<span class="${colorDotClass}" aria-hidden="true"></span> ${colorGroup.color}</div>`;
+            html += `<div class="latest-shipment-models">`;
+            html += `<div class="latest-shipment-head"><span class="latest-shipment-head-model">Model</span><span class="latest-shipment-head-order">Order</span><span class="latest-shipment-head-date">Date</span></div>`;
             colorGroup.models.forEach(model => {
-                const pillClass = model.model.toLowerCase();
-                html += `<span class=\"latest-shipment-pill\"><b>${model.model}</b> <span class=\"latest-shipment-order ${pillClass}\">${model.latest_order}</span></span>`;
+                const shipDate = formatShipDate(model.latest_ship_date);
+                html += `<div class="latest-shipment-row">`;
+                html += `<span class="latest-shipment-model">${model.model}</span>`;
+                html += `<span class="latest-shipment-order">${model.latest_order}</span>`;
+                html += `<span class="latest-shipment-date">${shipDate}</span>`;
+                html += `</div>`;
             });
             html += `</div></div>`;
         });
