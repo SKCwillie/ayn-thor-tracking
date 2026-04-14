@@ -1,7 +1,7 @@
-l## Get a Shipping Prediction
+## Get a Shipping Prediction
 http://ayn-thor-tracker.com/
 
- ht## Local Testing
+## Local Testing
 
 Run both backend and frontend locally with one command:
 
