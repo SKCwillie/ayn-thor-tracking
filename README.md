@@ -6,7 +6,7 @@ http://ayn-thor-tracker.com/
 Run both backend and frontend locally with one command:
 
 ```bash
-cd /Users/robert/PycharmProjects/ayn-thor-shipping
+cd ayn-thor-shipping
 source .venv/bin/activate
 python run_local.py
 ```
