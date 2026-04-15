@@ -17,7 +17,7 @@ LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+): (\d{4,5})xx--(\d{4,5}
 
 DEFAULT_INTERVAL_SECONDS = 3600
 DEFAULT_STATE_PATH = ".monitor_state.json"
-DEFAULT_RESTART_SCRIPT = "/home/ubuntu/restart_service.sh"
+DEFAULT_RESTART_SCRIPT = "/home/ubuntu/ayn-thor-tracking/restart_service.sh"
 
 
 def utc_now() -> str:
@@ -40,7 +40,7 @@ def fetch_dashboard(url: str, timeout: int, retries: int) -> str:
             return response.text
         except Exception as exc:
             last_error = exc
-            print(f"[{utc_now()}] Fetch failed (attempt {attempt}/{retries}): {exc}")
+            print(f"[{utc_now()}] Fetch failed (attempt {attempt}/{retries}): {exc}", flush=True)
             if attempt < retries:
                 time.sleep(backoff)
                 backoff *= 2
@@ -95,7 +95,7 @@ def load_state(path: Path) -> Dict[str, object]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        print(f"[{utc_now()}] Warning: could not read state file {path}: {exc}")
+        print(f"[{utc_now()}] Warning: could not read state file {path}: {exc}", flush=True)
         return {}
 
 
@@ -126,7 +126,7 @@ def latest_by_variant(rows: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
 
 def run_restart_script(script_path: Path, dry_run: bool = False) -> None:
     if dry_run:
-        print(f"[{utc_now()}] Dry run: would execute {script_path}")
+        print(f"[{utc_now()}] Dry run: would execute {script_path}", flush=True)
         return
 
     if not script_path.exists():
@@ -140,14 +140,14 @@ def run_restart_script(script_path: Path, dry_run: bool = False) -> None:
     )
 
     if result.stdout.strip():
-        print(result.stdout.strip())
+        print(result.stdout.strip(), flush=True)
     if result.stderr.strip():
-        print(result.stderr.strip())
+        print(result.stderr.strip(), flush=True)
 
     if result.returncode != 0:
         raise RuntimeError(f"Restart script failed with exit code {result.returncode}")
 
-    print(f"[{utc_now()}] Restart script completed successfully.")
+    print(f"[{utc_now()}] Restart script completed successfully.", flush=True)
 
 
 def check_once(args: argparse.Namespace) -> None:
@@ -160,7 +160,7 @@ def check_once(args: argparse.Namespace) -> None:
     current_latest = latest_by_variant(current_rows)
 
     if not current_rows:
-        print(f"[{utc_now()}] No shipment rows parsed from dashboard.")
+        print(f"[{utc_now()}] No shipment rows parsed from dashboard.", flush=True)
 
     state = load_state(state_path)
     previous_keys = [tuple(item) for item in state.get("shipment_keys", [])]
@@ -169,12 +169,12 @@ def check_once(args: argparse.Namespace) -> None:
     new_rows = [row for row in current_rows if row_key(row) not in previous_key_set]
 
     if previous_keys and new_rows:
-        print(f"[{utc_now()}] Detected {len(new_rows)} new shipment row(s).")
+        print(f"[{utc_now()}] Detected {len(new_rows)} new shipment row(s).", flush=True)
         run_restart_script(script_path, dry_run=args.dry_run)
     elif not previous_keys:
-        print(f"[{utc_now()}] Baseline saved. No restart on first run.")
+        print(f"[{utc_now()}] Baseline saved. No restart on first run.", flush=True)
     else:
-        print(f"[{utc_now()}] No new shipments detected.")
+        print(f"[{utc_now()}] No new shipments detected.", flush=True)
 
     new_state = {
         "url": args.url,
@@ -220,17 +220,17 @@ def main() -> None:
         check_once(args)
         return
 
-    print(f"[{utc_now()}] Starting monitor loop. Interval={args.interval_seconds}s")
+    print(f"[{utc_now()}] Starting monitor loop. Interval={args.interval_seconds}s", flush=True)
     while True:
         try:
             check_once(args)
         except Exception as exc:
-            print(f"[{utc_now()}] Check failed: {exc}")
+            print(f"[{utc_now()}] Check failed: {exc}", flush=True)
 
         try:
             time.sleep(args.interval_seconds)
         except KeyboardInterrupt:
-            print(f"[{utc_now()}] Stopping monitor.")
+            print(f"[{utc_now()}] Stopping monitor.", flush=True)
             break
 
 
