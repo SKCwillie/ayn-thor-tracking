@@ -133,7 +133,7 @@ def run_restart_script(script_path: Path, dry_run: bool = False) -> None:
         raise FileNotFoundError(f"Restart script not found: {script_path}")
 
     result = subprocess.run(
-        ["zsh", str(script_path)],
+        ["bash", str(script_path)],
         text=True,
         capture_output=True,
         check=False,
