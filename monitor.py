@@ -17,7 +17,7 @@ LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+): (\d{4,5})xx--(\d{4,5}
 
 DEFAULT_INTERVAL_SECONDS = 3600
 DEFAULT_STATE_PATH = ".monitor_state.json"
-DEFAULT_RESTART_SCRIPT = "/home/ubuntu/ayn-thor-tracking/restart_service.sh"
+DEFAULT_RESTART_SCRIPT = "/home/ubuntu/restart_service.sh"
 
 
 def utc_now() -> str:
