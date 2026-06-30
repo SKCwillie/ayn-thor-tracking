@@ -6,3 +6,4 @@ assets/expanded_shipments.csv
 .DS_Store
 __pycache__/
 ui/*.png
+.monitor_state.json
