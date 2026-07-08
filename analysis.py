@@ -21,11 +21,12 @@ def format_ax(ax, title=None, ylabel=None):
 
 DB_PATH = "shipping_info.db"
 
-MODEL_ORDER = ["Lite", "Base", "Pro", "Max"]
+MODEL_ORDER = ["Lite", "Base", "Pro", "Max - 512", "Max"]
 MODEL_COLORS = {
     "Lite": "#FFD700",
     "Base": "#D32D2F",
     "Pro": "#6A5ACD",
+    "Max - 512": "#4DA3FF",
     "Max": "#3CB371"
 }
 
@@ -67,6 +68,51 @@ def get_model_prediction_line(models, meta, make, model, color, min_date, max_da
     X_pred = pd.DataFrame({"date_ordinal": ordinals})
     max_shipped_pred = reg.predict(X_pred)
     return date_range, max_shipped_pred
+
+def get_512_prediction_line(models, make, color, latest_end, latest_date, end_date):
+    """
+    Project Max - 512 by borrowing the slope (orders/day) from the same-color Max model
+    and anchoring the trendline at the latest Max - 512 data point.
+    Returns (date_range, predicted_orders, coef) or (None, None, None).
+    """
+    normalized_to_actual = {
+        (normalize(k[0]), normalize(k[1]), normalize(k[2])): k
+        for k in models.keys()
+    }
+    lookup_key = (normalize(make), normalize("Max"), normalize(color))
+    if lookup_key not in normalized_to_actual:
+        print(f"  Max model not found for {color} — cannot project Max - 512")
+        return None, None, None
+    actual_key = normalized_to_actual[lookup_key]
+    reg = models[actual_key]
+    coef = reg.coef_[0]
+    anchor_ordinal = pd.Timestamp(latest_date).toordinal()
+    intercept_512 = latest_end - coef * anchor_ordinal
+    date_range = pd.date_range(pd.Timestamp(latest_date), pd.Timestamp(end_date), freq="7D")
+    if len(date_range) == 0:
+        return None, None, None
+    ordinals = date_range.map(pd.Timestamp.toordinal)
+    preds = coef * ordinals + intercept_512
+    return date_range, preds, coef
+
+
+def calculate_line_r2(df_subset, coef, intercept):
+    eval_df = df_subset[df_subset["date"] >= pd.Timestamp("2026-01-01")].copy()
+    if eval_df.empty:
+        return None
+    eval_df["date_ordinal"] = eval_df["date"].map(pd.Timestamp.toordinal)
+    eval_df = eval_df.dropna(subset=["date_ordinal", "end"])
+    if eval_df.empty:
+        return None
+    x = eval_df["date_ordinal"].astype(float)
+    y = eval_df["end"].astype(float)
+    y_pred = coef * x + intercept
+    ss_res = ((y - y_pred) ** 2).sum()
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    if ss_tot == 0:
+        return None
+    return 1 - (ss_res / ss_tot)
+
 
 def get_df(add_current_date_point=False):
     conn = sqlite3.connect(DB_PATH)
@@ -220,8 +266,10 @@ def plot_black_models(output_path=None):
         return
     models, meta = load_trained_models()
     plt.style.use('default')
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharex=True)
+    fig, axes = plt.subplots(3, 2, figsize=(14, 15), sharex=True)
     axes = axes.flatten()
+    # Hide the unused 6th panel (5 models in a 3×2 grid)
+    axes[5].set_visible(False)
     # Extend x-axis 21 days past last data
     if not black_df.empty:
         _, end = get_month_range(black_df["date"], extend_days=21)
@@ -246,52 +294,58 @@ def plot_black_models(output_path=None):
         min_date = pd.Timestamp("2026-01-01")
         # Use the graph's x-axis end for trendline extension
         trendline_max_date = end
-        dates, preds = get_model_prediction_line(
-            models, meta, make, model, "black", min_date, trendline_max_date
-        )
         r2_str = ""
         slope_str = ""
-        if dates is not None and preds is not None:
-            ax.plot(
-                dates,
-                preds,
-                color=MODEL_COLORS[model],
-                linestyle=":",
-                linewidth=2,
-                label="Projected",
-                zorder=2,
-                alpha=0.8,
+        if model == "Max - 512":
+            latest = model_df.iloc[-1]
+            dates, preds, coef = get_512_prediction_line(
+                models, make, "black", int(latest["end"]), latest["date"], trendline_max_date
             )
-            reg_key = (
-                make, model, "black"
-            )
-            reg_key_norm = (
-                normalize(make), normalize(model), normalize("black")
-            )
-            normalized_to_actual = {
-                (
-                    normalize(k[0]),
-                    normalize(k[1]),
-                    normalize(k[2])
-                ): k for k in models.keys()
-            }
-            if reg_key_norm in normalized_to_actual:
-                actual_key = normalized_to_actual[reg_key_norm]
-                reg = models[actual_key]
-                coef = reg.coef_[0]
-                units_per_day = coef
-                slope_str = f"{units_per_day:.1f} units/day"
-                filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
-                if not filtered_df.empty:
-                    filtered_df["date_ordinal"] = filtered_df["date"].map(pd.Timestamp.toordinal)
-                    # Drop rows with NaN in date_ordinal or end
-                    filtered_df = filtered_df.dropna(subset=["date_ordinal", "end"])
-                    X = filtered_df[["date_ordinal"]]
-                    y_true = filtered_df["end"] if "end" in filtered_df else filtered_df["cumulative"]
-                    r2 = reg.score(X, y_true)
+            if dates is not None:
+                ax.plot(
+                    dates, preds,
+                    color=MODEL_COLORS[model],
+                    linestyle=":", linewidth=2,
+                    label="Projected", zorder=2, alpha=0.8,
+                )
+                slope_str = f"{coef:.1f} units/day"
+                intercept_512 = int(latest["end"]) - coef * pd.Timestamp(latest["date"]).toordinal()
+                r2 = calculate_line_r2(model_df, coef, intercept_512)
+                if r2 is not None:
                     r2_str = f"$R^2$ = {r2:.3f}"
+            else:
+                print(f"  No Max model found for Black Max - 512 projection")
         else:
-            print(f"  No model found for Black {model}")
+            dates, preds = get_model_prediction_line(
+                models, meta, make, model, "black", min_date, trendline_max_date
+            )
+            if dates is not None and preds is not None:
+                ax.plot(
+                    dates, preds,
+                    color=MODEL_COLORS[model],
+                    linestyle=":", linewidth=2,
+                    label="Projected", zorder=2, alpha=0.8,
+                )
+                reg_key_norm = (normalize(make), normalize(model), normalize("black"))
+                normalized_to_actual = {
+                    (normalize(k[0]), normalize(k[1]), normalize(k[2])): k
+                    for k in models.keys()
+                }
+                if reg_key_norm in normalized_to_actual:
+                    actual_key = normalized_to_actual[reg_key_norm]
+                    reg = models[actual_key]
+                    coef = reg.coef_[0]
+                    slope_str = f"{coef:.1f} units/day"
+                    filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
+                    if not filtered_df.empty:
+                        filtered_df["date_ordinal"] = filtered_df["date"].map(pd.Timestamp.toordinal)
+                        filtered_df = filtered_df.dropna(subset=["date_ordinal", "end"])
+                        X = filtered_df[["date_ordinal"]]
+                        y_true = filtered_df["end"]
+                        r2 = reg.score(X, y_true)
+                        r2_str = f"$R^2$ = {r2:.3f}"
+            else:
+                print(f"  No model found for Black {model}")
         format_ax(ax, title=f"Black {model}", ylabel="Order Number")
         if r2_str or slope_str:
             ax.text(
@@ -308,6 +362,7 @@ def plot_black_models(output_path=None):
         ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
         if start is not None and end is not None:
             ax.set_xlim(start, end)
+        ax.set_ylim(bottom=1000)
     fig.suptitle("AYN Thor Black Models Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='DejaVu Sans')
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:
@@ -318,11 +373,11 @@ def plot_color_models(output_path=None):
     print("Plotting special color models...")
     df = get_df(add_current_date_point=True)
     special_colors = ["white", "clear purple", "rainbow"]
-    special_models = ["Pro", "Max"]
+    special_models = ["Pro", "Max - 512", "Max"]
     color_titles = {"white": "White", "clear purple": "Clear Purple", "rainbow": "Rainbow"}
     models, meta = load_trained_models()
     plt.style.use('default')
-    fig, axes = plt.subplots(3, 2, figsize=(16, 14), sharex=True)
+    fig, axes = plt.subplots(3, 3, figsize=(22, 14), sharex=True)
     filtered_df = df[df["color"].isin(special_colors)]
     # Extend x-axis 21 days past last data
     if not filtered_df.empty:
@@ -356,52 +411,58 @@ def plot_color_models(output_path=None):
             min_date = pd.Timestamp("2026-01-01")
             # Use the graph's x-axis end for trendline extension
             trendline_max_date = end
-            dates, preds = get_model_prediction_line(
-                models, meta, make, model, color, min_date, trendline_max_date
-            )
             r2_str = ""
             slope_str = ""
-            if dates is not None and preds is not None:
-                ax.plot(
-                    dates,
-                    preds,
-                    color=MODEL_COLORS[model],
-                    linestyle=":",
-                    linewidth=2,
-                    label="Projected",
-                    zorder=2,
-                    alpha=0.8,
+            if model == "Max - 512":
+                latest = model_df.iloc[-1]
+                dates, preds, coef = get_512_prediction_line(
+                    models, make, color, int(latest["end"]), latest["date"], trendline_max_date
                 )
-                reg_key = (
-                    make, model, color
-                )
-                reg_key_norm = (
-                    normalize(make), normalize(model), normalize(color)
-                )
-                normalized_to_actual = {
-                    (
-                        normalize(k[0]),
-                        normalize(k[1]),
-                        normalize(k[2])
-                    ): k for k in models.keys()
-                }
-                if reg_key_norm in normalized_to_actual:
-                    actual_key = normalized_to_actual[reg_key_norm]
-                    reg = models[actual_key]
-                    coef = reg.coef_[0]
-                    units_per_day = coef
-                    slope_str = f"{units_per_day:.1f} units/day"
-                    filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
-                    if not filtered_df2.empty:
-                        filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
-                        # Drop rows with NaN in date_ordinal or end
-                        filtered_df2 = filtered_df2.dropna(subset=["date_ordinal", "end"])
-                        X = filtered_df2[["date_ordinal"]]
-                        y_true = filtered_df2["end"] if "end" in filtered_df2 else filtered_df2["cumulative"]
-                        r2 = reg.score(X, y_true)
+                if dates is not None:
+                    ax.plot(
+                        dates, preds,
+                        color=MODEL_COLORS[model],
+                        linestyle=":", linewidth=2,
+                        label="Projected", zorder=2, alpha=0.8,
+                    )
+                    slope_str = f"{coef:.1f} units/day"
+                    intercept_512 = int(latest["end"]) - coef * pd.Timestamp(latest["date"]).toordinal()
+                    r2 = calculate_line_r2(model_df, coef, intercept_512)
+                    if r2 is not None:
                         r2_str = f"$R^2$ = {r2:.3f}"
+                else:
+                    print(f"  No Max model found for {color_titles[color]} Max - 512 projection")
             else:
-                print(f"  No model found for {color_titles[color]} {model}")
+                dates, preds = get_model_prediction_line(
+                    models, meta, make, model, color, min_date, trendline_max_date
+                )
+                if dates is not None and preds is not None:
+                    ax.plot(
+                        dates, preds,
+                        color=MODEL_COLORS[model],
+                        linestyle=":", linewidth=2,
+                        label="Projected", zorder=2, alpha=0.8,
+                    )
+                    reg_key_norm = (normalize(make), normalize(model), normalize(color))
+                    normalized_to_actual = {
+                        (normalize(k[0]), normalize(k[1]), normalize(k[2])): k
+                        for k in models.keys()
+                    }
+                    if reg_key_norm in normalized_to_actual:
+                        actual_key = normalized_to_actual[reg_key_norm]
+                        reg = models[actual_key]
+                        coef = reg.coef_[0]
+                        slope_str = f"{coef:.1f} units/day"
+                        filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
+                        if not filtered_df2.empty:
+                            filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
+                            filtered_df2 = filtered_df2.dropna(subset=["date_ordinal", "end"])
+                            X = filtered_df2[["date_ordinal"]]
+                            y_true = filtered_df2["end"]
+                            r2 = reg.score(X, y_true)
+                            r2_str = f"$R^2$ = {r2:.3f}"
+                else:
+                    print(f"  No model found for {color_titles[color]} {model}")
             format_ax(ax, title=f"{color_titles[color]} {model}", ylabel="Order Number")
             if r2_str or slope_str:
                 ax.text(
@@ -418,6 +479,7 @@ def plot_color_models(output_path=None):
             ax.legend(unique.values(), unique.keys(), fontsize=12, frameon=True, fancybox=False, edgecolor='#222', facecolor='#F0F0F0', borderpad=1, loc='upper left')
             if start is not None and end is not None:
                 ax.set_xlim(start, end)
+            ax.set_ylim(bottom=1000)
     fig.suptitle("AYN Thor Special Colors Order Progress", fontsize=22, fontweight='bold', color='#222', fontname='DejaVu Sans')
     plt.tight_layout(rect=(0, 0, 1, 0.96))
     if output_path:

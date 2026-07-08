@@ -272,7 +272,7 @@ def latest_shipments():
     Return the latest shipping info grouped by color, with models ordered as Lite, Base, Pro, Max.
     """
     # Define desired model order (case-insensitive)
-    model_order = ["lite", "base", "pro", "max"]
+    model_order = ["lite", "base", "pro", "max - 512", "max"]
 
     # Group by color
     color_dict = {}

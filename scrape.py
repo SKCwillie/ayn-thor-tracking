@@ -41,7 +41,7 @@ def scrape(historical=False):
 
     # Regex patterns
     DATE_PATTERN = re.compile(r"(\d{4}/\d{1,2}/\d{1,2})")
-    LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+): (\d{4,5})xx--(\d{4,5})xx")
+    LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+)(?: ?[（(](\d+)[）)])?: (\d{4,5})xx--(\d{4,5})xx")
 
     # Set up SQLite database
     conn = sqlite3.connect('shipping_info.db')
@@ -105,10 +105,12 @@ def scrape(historical=False):
                 detail_match = LINE_DETAIL_PATTERN.search(line)
                 if detail_match and current_date:
                     color_model = detail_match.group(1).strip()
-                    model = detail_match.group(2).strip()
-                    color = color_model.replace(model, '').strip()
-                    begin = detail_match.group(3)
-                    end = detail_match.group(4)
+                    base_model = detail_match.group(2).strip()
+                    storage = detail_match.group(3)
+                    model = f"{base_model} - {storage}" if storage else base_model
+                    color = color_model.replace(base_model, '').strip()
+                    begin = detail_match.group(4)
+                    end = detail_match.group(5)
                     try:
                         # Convert date from yyyy/mm/dd to yyyy-mm-dd for SQL DATE, zero-padded
                         parts = current_date.split('/')

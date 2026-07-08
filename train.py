@@ -1,4 +1,5 @@
 import argparse
+import copy
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -58,7 +59,7 @@ def load_raw_data(db_path: str, table_name: str) -> pd.DataFrame:
     if df["date"].isna().any():
         bad = df[df["date"].isna()].head()
         raise ValueError(f"Some dates could not be parsed:\n{bad}")
-    df = df[df["date"] >= "2026-01-01"].copy()
+    df = df[df["date"] >= "2026-02-01"].copy()
 
 
     df["begin"] = pd.to_numeric(df["begin"], errors="coerce")
@@ -159,6 +160,33 @@ def train_models(expanded_df: pd.DataFrame, raw_df: pd.DataFrame) -> dict:
 
     if not models:
         raise ValueError("No models were trained")
+
+    # For "Max - 512" models, borrow the slope from the same-color Max model and
+    # anchor the intercept at the latest Max - 512 data point. This keeps predictions
+    # consistent with how analysis.py projects these models on the charts, and avoids
+    # unreliable regressions when there are only a few 512 data points.
+    for key in list(models.keys()):
+        make, model_name, color = key
+        if model_name != "Max - 512":
+            continue
+        max_key = (make, "Max", color)
+        if max_key not in models:
+            print(f"  Warning: no Max model for {color} — keeping raw Max - 512 regression")
+            continue
+        max_reg = models[max_key]
+        coef = max_reg.coef_[0]
+        if coef == 0:
+            print(f"  Warning: Max model for {color} has zero slope — skipping 512 anchor")
+            continue
+        meta_512 = training_meta[key]
+        latest_end = meta_512["max_shipped"]
+        latest_date = pd.Timestamp(meta_512["latest_ship_date"])
+        anchor_ordinal = latest_date.toordinal()
+        anchored_intercept = latest_end - coef * anchor_ordinal
+        borrowed = copy.deepcopy(max_reg)
+        borrowed.intercept_ = anchored_intercept
+        models[key] = borrowed
+        training_meta[key]["model_type"] = "linear_regression_borrowed_max_rate"
 
     artifact = {
         "models": models,
