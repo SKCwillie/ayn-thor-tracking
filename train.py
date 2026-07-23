@@ -59,7 +59,8 @@ def load_raw_data(db_path: str, table_name: str) -> pd.DataFrame:
     if df["date"].isna().any():
         bad = df[df["date"].isna()].head()
         raise ValueError(f"Some dates could not be parsed:\n{bad}")
-    df = df[df["date"] >= "2026-02-01"].copy()
+    cutoff_date = pd.Timestamp.now().normalize() - pd.DateOffset(months=3)
+    df = df[df["date"] >= cutoff_date].copy()
 
 
     df["begin"] = pd.to_numeric(df["begin"], errors="coerce")
