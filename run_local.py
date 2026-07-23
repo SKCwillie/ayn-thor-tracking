@@ -172,6 +172,14 @@ def main() -> int:
     if not UI_DIR.exists() or not (UI_DIR / "index.html").exists():
         raise FileNotFoundError(f"Missing UI file: {UI_DIR / 'index.html'}")
 
+    prereq_cmds = [
+        [sys.executable, "train.py"],
+        [sys.executable, "analysis.py"],
+    ]
+    for cmd in prereq_cmds:
+        print(f"Running prerequisite: {' '.join(cmd)}")
+        subprocess.run(cmd, cwd=str(PROJECT_ROOT), check=True)
+
     backend_url = f"http://{args.host}:{args.backend_port}"
 
     backend_cmd = [
@@ -220,4 +228,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

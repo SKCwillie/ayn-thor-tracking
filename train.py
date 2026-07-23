@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
@@ -59,7 +60,7 @@ def load_raw_data(db_path: str, table_name: str) -> pd.DataFrame:
     if df["date"].isna().any():
         bad = df[df["date"].isna()].head()
         raise ValueError(f"Some dates could not be parsed:\n{bad}")
-    cutoff_date = pd.Timestamp.now().normalize() - pd.DateOffset(months=3)
+    cutoff_date = pd.Timestamp.now().normalize() - pd.DateOffset(months=5)
     df = df[df["date"] >= cutoff_date].copy()
 
 
@@ -101,9 +102,11 @@ def expand_to_daily_max_shipped(df: pd.DataFrame) -> pd.DataFrame:
         # For each shipment, set the max shipped for that date
         shipments = group_df[["date", "end_order"]].copy()
         shipments = shipments.groupby("date")["end_order"].max().reset_index()
+        shipments["is_shipment_day"] = True
         # Merge and forward fill
         daily = daily.merge(shipments, on="date", how="left")
         daily["end_order"] = daily["end_order"].ffill().fillna(0).astype(int)
+        daily["is_shipment_day"] = daily["is_shipment_day"].notna()
         # Ensure group is always a tuple
         if not isinstance(group, tuple):
             group = (group,)
@@ -140,9 +143,16 @@ def train_models(expanded_df: pd.DataFrame, raw_df: pd.DataFrame) -> dict:
         min_shipped = int(group["max_shipped"].min())
         max_shipped = int(group["max_shipped"].max())
 
+        # Weight recent days higher and actual-shipment days much higher, so the
+        # model adapts faster to trend changes while still accounting for pauses.
+        days_from_latest = (group["date"].max() - group["date"]).dt.days.astype(float)
+        recency_weight = 0.3 + 0.7 * np.exp(-days_from_latest / 21.0)
+        movement_weight = np.where(group["is_shipment_day"], 4.0, 0.35)
+        sample_weight = recency_weight * movement_weight
+
         model = LinearRegression()
-        model_type = "linear_regression"
-        model.fit(X, y)
+        model_type = "linear_regression_weighted_recent"
+        model.fit(X, y, sample_weight=sample_weight)
 
         models[key] = model
         latest_ship_date = latest_ship_date_map.get(key, pd.NaT)
@@ -193,7 +203,7 @@ def train_models(expanded_df: pd.DataFrame, raw_df: pd.DataFrame) -> dict:
         "models": models,
         "training_meta": training_meta,
         "trained_at": datetime.now().astimezone().isoformat(),
-        "model_version": "v2",
+        "model_version": "v3",
         "feature_columns": ["date_ordinal"],
     }
 
