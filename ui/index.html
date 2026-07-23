@@ -163,7 +163,7 @@ margin-top: 10px;
 .latest-shipment-head,
 .latest-shipment-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px 64px;
+  grid-template-columns: minmax(0, 1fr) 80px 52px;
   align-items: center;
   gap: 14px;
 }
@@ -192,6 +192,7 @@ margin-top: 10px;
   font-weight: 600;
   color: #1f2937;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .latest-shipment-order {
@@ -295,7 +296,7 @@ margin-top: 10px;
   }
   .latest-shipment-head,
   .latest-shipment-row {
-    grid-template-columns: minmax(0, 1fr) 84px 56px;
+    grid-template-columns: minmax(0, 1fr) 78px 50px;
     gap: 10px;
   }
   .latest-shipment-head-date,
@@ -514,10 +515,10 @@ margin-top: 10px;
 
 <script>
 const models = {
-"Black": ["Lite","Base","Pro","Max"],
-"White": ["Pro","Max"],
-"Rainbow": ["Pro","Max"],
-"Clear Purple": ["Pro","Max"]
+"Black": ["Lite","Base","Pro","Max - 512","Max"],
+"White": ["Pro","Max - 512","Max"],
+"Rainbow": ["Pro","Max - 512","Max"],
+"Clear Purple": ["Pro","Max - 512","Max"]
 }
 
 const colorSelect = document.getElementById("color")
