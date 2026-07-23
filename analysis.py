@@ -136,6 +136,7 @@ def get_df(add_current_date_point=False):
     df["units_shipped"] = pd.to_numeric(df["units_shipped"], errors="coerce")
     df["color"] = df["color"].astype(str).str.strip().str.lower()
     df = df.sort_values(["make", "model", "color", "date"])
+    df["is_synthetic"] = False
     df["prev_end"] = df.groupby(["make", "model", "color"])["end"].shift(1)
     df["calc_units"] = df["end"] - df["prev_end"]
     df["calc_units"] = df["calc_units"].fillna(df["units_shipped"])
@@ -164,7 +165,8 @@ def get_df(add_current_date_point=False):
                 "units_shipped": 0,
                 "prev_end": row["max_end"],
                 "calc_units": 0,
-                "cumulative": row["last_cumulative"]
+                "cumulative": row["last_cumulative"],
+                "is_synthetic": True
             })
         if synthetic_rows:
             df = pd.concat([df, pd.DataFrame(synthetic_rows)], ignore_index=True)
@@ -282,12 +284,15 @@ def plot_black_models(output_path=None):
         if model_df.empty:
             ax.set_visible(False)
             continue
+        fit_df = model_df[~model_df["is_synthetic"]].copy()
+        if fit_df.empty:
+            fit_df = model_df.copy()
         ax.plot(
             model_df["date"],
             model_df["end"],
             color=MODEL_COLORS[model],
             linewidth=4,
-            zorder=3,
+            zorder=2,
             label="Shipped"
         )
         make = model_df["make"].iloc[0] if not model_df.empty else "Thor"
@@ -297,7 +302,7 @@ def plot_black_models(output_path=None):
         r2_str = ""
         slope_str = ""
         if model == "Max - 512":
-            latest = model_df.iloc[-1]
+            latest = fit_df.iloc[-1]
             dates, preds, coef = get_512_prediction_line(
                 models, make, "black", int(latest["end"]), latest["date"], trendline_max_date
             )
@@ -306,11 +311,11 @@ def plot_black_models(output_path=None):
                     dates, preds,
                     color=MODEL_COLORS[model],
                     linestyle=":", linewidth=2,
-                    label="Projected", zorder=2, alpha=0.8,
+                    label="Projected", zorder=4, alpha=0.95,
                 )
                 slope_str = f"{coef:.1f} units/day"
                 intercept_512 = int(latest["end"]) - coef * pd.Timestamp(latest["date"]).toordinal()
-                r2 = calculate_line_r2(model_df, coef, intercept_512)
+                r2 = calculate_line_r2(fit_df, coef, intercept_512)
                 if r2 is not None:
                     r2_str = f"$R^2$ = {r2:.3f}"
             else:
@@ -324,7 +329,7 @@ def plot_black_models(output_path=None):
                     dates, preds,
                     color=MODEL_COLORS[model],
                     linestyle=":", linewidth=2,
-                    label="Projected", zorder=2, alpha=0.8,
+                    label="Projected", zorder=4, alpha=0.95,
                 )
                 reg_key_norm = (normalize(make), normalize(model), normalize("black"))
                 normalized_to_actual = {
@@ -336,7 +341,7 @@ def plot_black_models(output_path=None):
                     reg = models[actual_key]
                     coef = reg.coef_[0]
                     slope_str = f"{coef:.1f} units/day"
-                    filtered_df = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
+                    filtered_df = fit_df[fit_df["date"] >= pd.Timestamp("2026-01-01")].copy()
                     if not filtered_df.empty:
                         filtered_df["date_ordinal"] = filtered_df["date"].map(pd.Timestamp.toordinal)
                         filtered_df = filtered_df.dropna(subset=["date_ordinal", "end"])
@@ -391,6 +396,9 @@ def plot_color_models(output_path=None):
             if model_df.empty:
                 ax.set_visible(False)
                 continue
+            fit_df = model_df[~model_df["is_synthetic"]].copy()
+            if fit_df.empty:
+                fit_df = model_df.copy()
             # Calculate x-axis limits, skipping the first month
             if not model_df.empty:
                 min_date = model_df["date"].min()
@@ -404,7 +412,7 @@ def plot_color_models(output_path=None):
                 model_df["end"],
                 color=MODEL_COLORS[model],
                 linewidth=4,
-                zorder=3,
+                zorder=2,
                 label="Shipped"
             )
             make = model_df["make"].iloc[0] if not model_df.empty else "Thor"
@@ -414,7 +422,7 @@ def plot_color_models(output_path=None):
             r2_str = ""
             slope_str = ""
             if model == "Max - 512":
-                latest = model_df.iloc[-1]
+                latest = fit_df.iloc[-1]
                 dates, preds, coef = get_512_prediction_line(
                     models, make, color, int(latest["end"]), latest["date"], trendline_max_date
                 )
@@ -423,11 +431,11 @@ def plot_color_models(output_path=None):
                         dates, preds,
                         color=MODEL_COLORS[model],
                         linestyle=":", linewidth=2,
-                        label="Projected", zorder=2, alpha=0.8,
+                        label="Projected", zorder=4, alpha=0.95,
                     )
                     slope_str = f"{coef:.1f} units/day"
                     intercept_512 = int(latest["end"]) - coef * pd.Timestamp(latest["date"]).toordinal()
-                    r2 = calculate_line_r2(model_df, coef, intercept_512)
+                    r2 = calculate_line_r2(fit_df, coef, intercept_512)
                     if r2 is not None:
                         r2_str = f"$R^2$ = {r2:.3f}"
                 else:
@@ -441,7 +449,7 @@ def plot_color_models(output_path=None):
                         dates, preds,
                         color=MODEL_COLORS[model],
                         linestyle=":", linewidth=2,
-                        label="Projected", zorder=2, alpha=0.8,
+                        label="Projected", zorder=4, alpha=0.95,
                     )
                     reg_key_norm = (normalize(make), normalize(model), normalize(color))
                     normalized_to_actual = {
@@ -453,7 +461,7 @@ def plot_color_models(output_path=None):
                         reg = models[actual_key]
                         coef = reg.coef_[0]
                         slope_str = f"{coef:.1f} units/day"
-                        filtered_df2 = model_df[model_df["date"] >= pd.Timestamp("2026-01-01")].copy()
+                        filtered_df2 = fit_df[fit_df["date"] >= pd.Timestamp("2026-01-01")].copy()
                         if not filtered_df2.empty:
                             filtered_df2["date_ordinal"] = filtered_df2["date"].map(pd.Timestamp.toordinal)
                             filtered_df2 = filtered_df2.dropna(subset=["date_ordinal", "end"])
