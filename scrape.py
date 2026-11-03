@@ -41,7 +41,7 @@ def scrape(historical=False):
 
     # Regex patterns
     DATE_PATTERN = re.compile(r"(\d{4}/\d{1,2}/\d{1,2})")
-    LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+)(?: ?[（(](\d+)[）)])?: (\d{4,5})xx--(\d{4,5})xx")
+    LINE_DETAIL_PATTERN = re.compile(r"Thor\s+(.+?)\s+(\w+)(?:\s*[（(](\d+)[）)])?:\s*(\d{4,5})xx\s*--\s*(\d{4,5})xx")
 
     # Set up SQLite database
     conn = sqlite3.connect('shipping_info.db')
