@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 DASHBOARD_URL = "https://www.ayntec.com/pages/shipment-dashboard"
 DATE_PATTERN = re.compile(r"(\d{4}/\d{1,2}/\d{1,2})")
-LINE_DETAIL_PATTERN = re.compile(r"Thor ([\w\s]+) ([\w]+): (\d{4,5})xx--(\d{4,5})xx")
+LINE_DETAIL_PATTERN = re.compile(r"Thor\s+(.+?)\s+(\w+)(?:\s*[（(](\d+)[）)])?:\s*(\d{4,5})xx\s*--\s*(\d{4,5})xx")
 
 DEFAULT_INTERVAL_SECONDS = 3600
 DEFAULT_STATE_PATH = ".monitor_state.json"
@@ -68,11 +68,12 @@ def parse_shipments(html: str) -> List[Dict[str, str]]:
         if "Thor" in line and ":" in line and "xx--" in line:
             detail_match = LINE_DETAIL_PATTERN.search(line)
             if detail_match and current_date:
-                color_model = detail_match.group(1).strip()
-                model = detail_match.group(2).strip()
-                color = color_model.replace(model, "").strip()
-                begin = detail_match.group(3)
-                end = detail_match.group(4)
+                color = detail_match.group(1).strip()
+                base_model = detail_match.group(2).strip()
+                storage = detail_match.group(3)
+                model = f"{base_model} - {storage}" if storage else base_model
+                begin = detail_match.group(4)
+                end = detail_match.group(5)
 
                 shipments.append(
                     {
